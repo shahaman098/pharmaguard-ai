@@ -58,12 +58,12 @@
 
 **Clicks:**
 1. Click the **24-hour schedule** tab.
-2. Point at the fasting 07:30 levothyroxine dose and the midday calcium.
-3. Point at the “Why this schedule” notes: levothyroxine/calcium 5h apart, ciprofloxacin/calcium 5.5h apart, warfarin/ibuprofen separated for administration safety.
+2. Point at the 12:30 midday group (calcium + ibuprofen) and the 22:00 simvastatin bedtime dose.
+3. Point at the “Why this schedule” notes: ciprofloxacin/calcium 5.5h apart, simvastatin/clarithromycin separated, warfarin/ibuprofen separated for administration safety.
 4. Point at the solver line: “all spacing constraints satisfied.”
 
 **Narration:**
-“This is not a hardcoded timetable. A backtracking constraint solver enforces fasting windows, meals, twice-daily intervals, bedtime placement, and three-to-four-hour chelation spacing. It tells you why every dose moved — and it reports conflicts it cannot fix instead of hiding them.”
+“This is not a hardcoded timetable. A backtracking constraint solver enforces fasting windows, meals, twice-daily intervals, bedtime placement, and three-to-four-hour chelation spacing. Here it keeps calcium five and a half hours from ciprofloxacin, puts simvastatin at bedtime, and separates the contraindicated pairs for administration safety. It tells you why every dose moved — and it reports conflicts it cannot fix instead of hiding them.”
 
 ### 1:30–1:44 — Patient action
 
@@ -100,7 +100,7 @@
 **On screen:** terminal with `python3 -m unittest discover tests -v` → `Ran 35 tests — OK`, then the GitHub repo, then the title card.
 
 **Narration:**
-“Thirty-three tests cover aliases, high-yield interactions, fail-safe behavior, scheduling constraints, and determinism. The demo knowledge base has 52 medicines and 77 rules. It is open source, zero-Python-dependency, and built for the last mile of medication safety. Thank you.”
+“Thirty-five tests cover aliases, high-yield interactions, fail-safe behavior, scheduling constraints, and determinism. The demo knowledge base has 52 medicines and 77 rules. It is open source, zero-Python-dependency, and built for the last mile of medication safety. Thank you.”
 
 ---
 
