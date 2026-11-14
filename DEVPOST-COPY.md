@@ -30,7 +30,7 @@ The dangerous gaps are often ordinary: warfarin plus an NSAID, a statin plus a s
 
 PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 
-1. **Read the regimen from a label photo.** The app uses Tesseract.js, an LSTM-based OCR engine, to read a prescription label in the browser, proposes medicines and doses, and asks the user to confirm. The image never leaves the browser.
+1. **Read the regimen from a label photo.** The app uses Tesseract.js, an LSTM-based OCR engine, to read a prescription label in the browser, then proposes medicines and doses for the user to confirm. The image never leaves the browser.
 2. **Screen against a deterministic knowledge base.** 52 medicines and 77 curated rules cover CYP450 interactions, renal clearance, pharmacodynamic synergy, QT prolongation, bleeding, hyperkalemia, and GI chelation. Results are reproducible and auditable.
 3. **Fail closed, not open.** If a medicine is not in the demo knowledge base, the app marks it **UNVERIFIED** and refuses to call the regimen safe. This was a deliberate design choice: a false “safe” is worse than an honest “I don’t know.”
 4. **Resolve timing with a real constraint solver.** A deterministic backtracking scheduler enforces fasting windows, meal alignment, bedtime placement, twice-daily intervals, and 3–4 hour chelation spacing. It reports unresolved conflicts instead of pretending they were fixed.
