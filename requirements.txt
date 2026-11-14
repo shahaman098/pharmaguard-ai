@@ -1,0 +1,2 @@
+# PharmaGuard AI has zero external Python dependencies.
+# The server, engine, and scheduler use only the Python standard library.
