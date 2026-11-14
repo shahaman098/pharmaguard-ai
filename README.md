@@ -4,6 +4,8 @@
 >
 > Built for **DSH Hacks V2 — AI × Healthcare**
 
+![PharmaGuard AI](thumbnail.png)
+
 [![Tests](https://img.shields.io/badge/tests-35%2F35%20passing-brightgreen)](tests/test_safety_engine.py)
 [![Knowledge base](https://img.shields.io/badge/demo%20KB-52%20drugs%20%C2%B7%2077%20rules-blue)](#knowledge-base)
 [![Dependencies](https://img.shields.io/badge/python%20deps-zero-success)](#quick-start)
@@ -186,6 +188,7 @@ These are engineering tests, **not** a clinical validation study. See [`BENCHMAR
 ├── ONE-PAGE-SUMMARY.md/.html   # print-ready one-pager
 ├── BENCHMARK-REPORT.md         # verification scope and limitations
 ├── RESEARCH.md                 # research-oriented statement (YRI)
+├── thumbnail.png               # Devpost thumbnail (1200x675)
 └── SUBMISSION-KIT.md           # step-by-step submission checklist
 ```
 

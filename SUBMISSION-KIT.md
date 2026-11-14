@@ -97,9 +97,10 @@ The server already binds `0.0.0.0` and reads `$PORT`.
 4. **Video:** paste the YouTube/Vimeo URL.
 5. **Files:** upload `PharmaGuard-AI-One-Page-Summary.pdf` and the source ZIP.
 6. **GitHub:** `https://github.com/shahaman098/pharmaguard-ai`
-7. **Tags:** from `DEVPOST-ANSWERS.md`.
-8. **Prize categories:** Main track; optionally **Best Research-Oriented Project (YRI)** and **Tin Computer Growth Plan**.
-9. Click **Save & Submit**. You can edit until the lock.
+7. **Thumbnail (if asked):** upload `thumbnail.png` (1200×675).
+8. **Tags:** from `DEVPOST-ANSWERS.md`.
+9. **Prize categories:** Main track; optionally **Best Research-Oriented Project (YRI)** and **Tin Computer Growth Plan**.
+10. Click **Save & Submit**. You can edit until the lock.
 
 Create the ZIP:
 
