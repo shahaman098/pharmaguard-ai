@@ -11,7 +11,7 @@
 [![Dependencies](https://img.shields.io/badge/python%20deps-zero-success)](#quick-start)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Live demo:** _(add your deployed URL here)_ · **Repo:** https://github.com/shahaman098/pharmaguard-ai
+**Repo:** https://github.com/shahaman098/pharmaguard-ai · **Run locally:** `python3 server.py --port 8080`
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/shahaman098/pharmaguard-ai)
 
