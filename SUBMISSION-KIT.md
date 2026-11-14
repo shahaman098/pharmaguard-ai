@@ -121,6 +121,7 @@ Open an incognito window and check:
 - [ ] One-page PDF is readable and one page.
 - [ ] ZIP downloads and contains `server.py`, `pharmaguard/`, `static/`, `tests/`.
 - [ ] No unresolved placeholders like `<YOUR_USERNAME>` or `[TODO]` in the submission copy. (Local `localhost` run commands are fine.)
+- [ ] Fill or remove the **Live demo** and **Video** lines at the top of `DEVPOST-COPY.md`.
 - [ ] Live demo URL works (if deployed).
 - [ ] Submission says “46 tests,” “52 drugs,” “77 rules,” not “100% accuracy.”
 

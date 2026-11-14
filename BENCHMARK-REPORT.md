@@ -37,7 +37,7 @@ python3 -m unittest discover tests -v
 Observed:
 
 ```text
-Ran 46 tests in 0.02s
+Ran 46 tests in ~0.03s
 
 OK
 ```

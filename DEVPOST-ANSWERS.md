@@ -91,5 +91,6 @@ A: A licensed interaction dataset, clinician-adjudicated validation, FHIR medica
 - [ ] One-page PDF is exactly one page.
 - [ ] Source ZIP contains `server.py`, `pharmaguard/`, `static/`, `tests/`.
 - [ ] No unresolved placeholders (`<YOUR_USERNAME>`, `[TODO]`) in the writeup. (Local `localhost` run commands are fine.)
+- [ ] Fill or remove the **Live demo** and **Video** lines in `DEVPOST-COPY.md`.
 - [ ] Claims match the build: 46 tests, 52 drugs, 77 rules, no “100% accuracy.”
 - [ ] Submission saved and confirmed.
