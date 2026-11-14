@@ -93,7 +93,7 @@ The server already binds `0.0.0.0` and reads `$PORT`.
 
 1. **Project name:** `PharmaGuard AI`
 2. **Elevator pitch:** `Scan prescriptions. Catch dangerous interactions. Fix the schedule.`
-3. **Description:** paste `DEVPOST-COPY.md`.
+3. **Description:** paste the section starting at `### 💡 Inspiration` through the end of `DEVPOST-COPY.md` (skip the metadata header).
 4. **Video:** paste the YouTube/Vimeo URL.
 5. **Files:** upload `PharmaGuard-AI-One-Page-Summary.pdf` and the source ZIP.
 6. **GitHub:** `https://github.com/shahaman098/pharmaguard-ai`
