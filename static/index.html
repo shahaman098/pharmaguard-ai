@@ -24,7 +24,7 @@
           </svg>
         </div>
         <div class="brand-text">
-          <span class="brand-title">PharmaGuard <span class="ai-pill">AI</span></span>
+          <h1 class="brand-title">PharmaGuard <span class="ai-pill">AI</span></h1>
           <span class="brand-sub">Prescription safety, timing resolution &amp; clinician handoff</span>
         </div>
       </div>
@@ -263,9 +263,9 @@
         <button id="btn-close-scan" class="modal-close" type="button" aria-label="Close scan dialog">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="modal-desc">Choose a clear photo of the label. The image is read locally in your browser; only the recognized text is used to suggest medicines.</p>
+        <p class="modal-desc">Choose a clear photo of the label. The image is read locally in your browser; only the recognized text is used to suggest medicines. The demo uses the registry's standard dose frequency for scheduling, so confirm the label's directions with a pharmacist.</p>
 
-        <label id="scan-dropzone" class="scan-dropzone" for="scan-file">
+        <label id="scan-dropzone" class="scan-dropzone" for="scan-file" tabindex="0" role="button">
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <strong>Drop a label image here, or click to choose</strong>
           <span>PNG, JPG, or WebP · max 8 MB</span>
@@ -292,12 +292,12 @@
             <button id="btn-clear-scan" class="btn-text" type="button">Clear</button>
           </div>
           <pre id="scan-text" class="scan-text"></pre>
-          <div id="scan-detected" class="scan-detected"></div>
+          <div id="scan-detected" class="scan-detected" aria-live="polite"></div>
         </div>
 
         <details class="scan-paste">
           <summary>OCR unavailable? Paste label text instead</summary>
-          <textarea id="scan-paste-text" class="sbar-textarea" rows="4" placeholder="Example: Warfarin 5 mg — take one tablet by mouth every evening"></textarea>
+          <textarea id="scan-paste-text" class="sbar-textarea" rows="4" aria-label="Paste prescription label text" placeholder="Example: Warfarin 5 mg — take one tablet by mouth every evening"></textarea>
           <button id="btn-parse-paste" class="btn btn-secondary btn-sm" type="button">Find medicines in text</button>
         </details>
       </div>
@@ -320,7 +320,7 @@
       </div>
       <div class="modal-body">
         <p class="modal-desc">This draft summarizes verified interactions, unverified medicines, and timing issues for pharmacist or physician review.</p>
-        <textarea id="sbar-textarea" class="sbar-textarea" readonly></textarea>
+        <textarea id="sbar-textarea" class="sbar-textarea" readonly aria-label="Generated SBAR clinical review draft"></textarea>
       </div>
       <div class="modal-footer">
         <button id="btn-copy-sbar" class="btn btn-primary" type="button">
@@ -339,7 +339,6 @@
     </div>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -10,7 +10,7 @@
 
 ## Abstract
 
-Polypharmacy creates a last-mile safety problem: interaction alerts are common, but **timing resolution and clinician handoff are rare**. PharmaGuard AI explores a safety-first architecture in which AI is used only for perception (label OCR), while interaction detection and scheduling are deterministic and auditable. The prototype combines a 52-drug, 77-rule knowledge base, a fail-closed unknown-medication policy, a backtracking interval-constraint scheduler, and two artifacts (an SBAR draft and a calendar export). We evaluate the artifact with 35 engineering tests covering interaction detection, alias resolution, fail-safe behavior, and scheduling properties. We report the scope and limitations explicitly and outline the clinical validation work required before any real-world use.
+Polypharmacy creates a last-mile safety problem: interaction alerts are common, but **timing resolution and clinician handoff are rare**. PharmaGuard AI explores a safety-first architecture in which AI is used only for perception (label OCR), while interaction detection and scheduling are deterministic and auditable. The prototype combines a 52-drug, 77-rule knowledge base, a fail-closed unknown-medication policy, a backtracking interval-constraint scheduler, and two artifacts (an SBAR draft and a calendar export). We evaluate the artifact with 45 engineering tests covering interaction detection, alias resolution, fail-safe behavior, and scheduling properties. We report the scope and limitations explicitly and outline the clinical validation work required before any real-world use.
 
 ---
 
@@ -81,7 +81,7 @@ Engineering verification via `python3 -m unittest discover tests -v`. The suite 
 
 | Dimension | Result |
 |---|---|
-| Automated tests | **35/35 passing** |
+| Automated tests | **46/46 passing** |
 | Drug registry | 52 medicines |
 | Rules | 77 (pairwise + therapeutic duplication) |
 | High-yield interaction pairs covered | 20+ |
@@ -100,6 +100,8 @@ Representative tests:
 - methotrexate → weekly, never daily
 - tramadol → PRN, not auto-scheduled
 - repeated runs → identical dose times
+- scanned dose overrides → the confirmed label dose reaches the audit and schedule
+- 17-drug stress case → every daily medicine receives a scheduled dose
 
 ### 4.3 What the evaluation does *not* show
 
@@ -108,6 +110,7 @@ Representative tests:
 - correctness of every mechanism or management recommendation;
 - safety in pregnancy, pediatrics, renal/hepatic impairment, or critical illness;
 - OCR accuracy across real-world lighting, curvature, glare, or handwriting;
+- correctness of parsed label directions/frequencies (the demo uses registry defaults);
 - usability with patients or clinicians.
 
 These are explicit non-claims, not omissions.

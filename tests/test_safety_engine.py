@@ -58,8 +58,27 @@ class TestDrugResolution(unittest.TestCase):
             "ciprofloxacin",
         )
 
+    def test_mineral_names_survive_direction_words(self):
+        self.assertEqual(
+            self.engine.normalize_drug_name("Calcium Carbonate 600 mg with meals"),
+            "calcium_carbonate",
+        )
+        self.assertEqual(
+            self.engine.normalize_drug_name("Potassium Chloride 20 mEq with meals"),
+            "potassium_chloride",
+        )
+
     def test_unknown_name_returns_none(self):
         self.assertIsNone(self.engine.normalize_drug_name("Unobtainium"))
+
+    def test_short_aliases_do_not_misfire(self):
+        # "ct" used to resolve to iodinated contrast via a brand string split.
+        self.assertIsNone(self.engine.normalize_drug_name("ct"))
+        self.assertIsNone(self.engine.normalize_drug_name("example"))
+        self.assertEqual(
+            self.engine.normalize_drug_name("ct contrast"),
+            "iodinated_contrast",
+        )
 
 
 class TestClinicalAudit(unittest.TestCase):
@@ -161,6 +180,12 @@ class TestClinicalAudit(unittest.TestCase):
         self.assertEqual(result["moderate_count"], 1)
         self.assertTrue(any("Duplication" in item["title"] for item in result["interactions"]))
 
+    def test_duplicate_rule_ids_are_unique(self):
+        result = self.engine.audit_regimen(["Sertraline", "Fluoxetine", "Citalopram"])
+        ids = [item["rule_id"] for item in result["interactions"]]
+        self.assertEqual(len(ids), 3)
+        self.assertEqual(len(ids), len(set(ids)))
+
     def test_score_is_bounded(self):
         result = self.engine.audit_regimen(
             ["Warfarin", "Ibuprofen", "Sildenafil", "Nitroglycerin", "Sertraline", "Tramadol"]
@@ -178,6 +203,41 @@ class TestClinicalAudit(unittest.TestCase):
         result = self.engine.audit_regimen(["Metformin", "Unknown A", "Unknown B"])
         self.assertEqual(result["verified_count"], 1)
         self.assertEqual(result["coverage_pct"], 33)
+
+    def test_none_entries_are_ignored(self):
+        result = self.engine.audit_regimen([None, "Warfarin", ""])
+        self.assertEqual(result["verified_count"], 1)
+        self.assertEqual(result["unknown_drugs"], [])
+
+    def test_label_dose_override_is_applied(self):
+        result = self.engine.audit_regimen(["Warfarin"], {"warfarin": "2 mg"})
+        self.assertEqual(result["regimen"][0]["default_dose"], "2 mg")
+        sbar = self.engine.generate_sbar_note(result)
+        self.assertIn("Warfarin (2 mg)", sbar)
+
+    def test_invalid_dose_override_falls_back(self):
+        result = self.engine.audit_regimen(["Warfarin"], {"warfarin": 123})
+        self.assertEqual(result["regimen"][0]["default_dose"], "5 mg")
+
+    def test_dose_override_accepts_brand_keys(self):
+        result = self.engine.audit_regimen(["Warfarin"], {"Coumadin": "2 mg"})
+        self.assertEqual(result["regimen"][0]["default_dose"], "2 mg")
+
+    def test_sbar_survives_malformed_audit(self):
+        sbar = self.engine.generate_sbar_note({
+            "interactions": [{}],
+            "regimen": [{}],
+            "unknown_drugs": [None],
+        })
+        self.assertIn("[S] SITUATION", sbar)
+        self.assertIn("dose n/a", sbar)
+
+        sbar = self.engine.generate_sbar_note({
+            "interactions": [],
+            "regimen": [],
+            "unknown_drugs": "not-a-list",
+        })
+        self.assertIn("[S] SITUATION", sbar)
 
     def test_sbar_generation(self):
         audit = self.engine.audit_regimen(["Warfarin", "Ibuprofen", "Simvastatin"])
@@ -293,6 +353,38 @@ class TestScheduler(unittest.TestCase):
         for dose in schedule["doses"]:
             self.assertGreaterEqual(_time_to_minutes(dose["time"]), 6 * 60)
             self.assertLessEqual(_time_to_minutes(dose["time"]), 23 * 60)
+
+    def test_large_regimen_gets_a_complete_schedule(self):
+        medications = [
+            "Warfarin", "Ibuprofen", "Aspirin", "Naproxen", "Clopidogrel",
+            "Sertraline", "Tramadol", "Lisinopril", "Spironolactone",
+            "Potassium Chloride", "Metformin", "Simvastatin",
+            "Clarithromycin", "Ciprofloxacin", "Calcium Carbonate",
+            "Levothyroxine", "Ferrous Sulfate",
+        ]
+        audit, schedule = self._schedule(medications)
+        daily_plans = [
+            med for med in audit["regimen"]
+            if med["schedule"]["frequency"] not in ("as_needed", "weekly")
+        ]
+        self.assertGreaterEqual(len(schedule["doses"]), len(daily_plans))
+        self.assertIn("critical_conflicts", schedule)
+        self.assertIn("critical_relaxed", schedule["solver"])
+
+    def test_invalid_schedule_items_are_ignored(self):
+        schedule = self.scheduler.build_schedule(
+            ["not a medication", None, 42, {}],
+            [None, "not an interaction", {}],
+        )
+        self.assertEqual(schedule["doses"], [])
+        self.assertEqual(schedule["groups"], [])
+        self.assertEqual(schedule["critical_conflicts"], [])
+
+    def test_label_dose_override_reaches_schedule(self):
+        result = self.engine.audit_regimen(["Warfarin"], {"warfarin": "2 mg"})
+        schedule = self.scheduler.build_schedule(result["regimen"], result["interactions"])
+        warfarin = [dose for dose in schedule["doses"] if dose["key"] == "warfarin"][0]
+        self.assertEqual(warfarin["dose"], "2 mg")
 
 
 if __name__ == "__main__":

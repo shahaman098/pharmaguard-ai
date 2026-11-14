@@ -40,7 +40,7 @@ Label photo → browser OCR → human confirmation → /api/audit
 
 ## 4. Verification
 
-- **35/35 automated tests pass** (`python3 -m unittest discover tests -v`).
+- **46/46 automated tests pass** (`python3 -m unittest discover tests -v`).
 - Coverage includes 20+ high-yield interaction pairs, alias regressions, unknown-drug fail-safe behavior, SBAR structure, chelation spacing, fasting/meal/bedtime placement, weekly/PRN handling, determinism, and day-window bounds.
 - The suite is an engineering check on a curated demo set — **not** a clinical validation study.
 

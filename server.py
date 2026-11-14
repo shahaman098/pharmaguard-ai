@@ -19,9 +19,13 @@ from pharmaguard.interactions import DISCLAIMER, DRUG_REGISTRY, KNOWLEDGE_BASE_M
 from pharmaguard.scheduler import ScheduleOptimizer
 
 
+class PharmaGuardHTTPServer(ThreadingHTTPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+
 class PharmaGuardHandler(BaseHTTPRequestHandler):
     engine = ClinicalSafetyEngine()
-    scheduler = ScheduleOptimizer()
     static_dir = (Path(__file__).parent / "static").resolve()
 
     # ------------------------------------------------------------------
@@ -52,19 +56,22 @@ class PharmaGuardHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _read_json(self) -> dict:
+    def _read_json(self) -> dict | None:
+        """Return a JSON object, or None when the request body is invalid."""
         try:
             length = int(self.headers.get("Content-Length", 0))
         except (TypeError, ValueError):
             length = 0
-        if length <= 0 or length > 2_000_000:
+        if length <= 0:
             return {}
+        if length > 2_000_000:
+            return None
         body = self.rfile.read(length)
         try:
             payload = json.loads(body.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError):
-            return {}
-        return payload if isinstance(payload, dict) else {}
+            return None
+        return payload if isinstance(payload, dict) else None
 
     def _safe_static_path(self, raw_path: str) -> Path | None:
         relative = raw_path.lstrip("/")
@@ -151,39 +158,54 @@ class PharmaGuardHandler(BaseHTTPRequestHandler):
         path = parsed.path
         payload = self._read_json()
 
-        if path == "/api/audit":
-            medications = payload.get("medications", [])
-            if not isinstance(medications, list):
-                self._send_json({"error": "medications must be a list of strings"}, 400)
-                return
-            result = self.engine.audit_regimen(medications)
-            self._send_json(result)
+        if payload is None:
+            self._send_json({"error": "Invalid JSON body"}, 400)
             return
 
-        if path == "/api/reschedule":
-            regimen = payload.get("regimen", [])
-            interactions = payload.get("interactions", [])
-            if not isinstance(regimen, list) or not isinstance(interactions, list):
-                self._send_json({"error": "regimen and interactions must be lists"}, 400)
+        try:
+            if path == "/api/audit":
+                medications = payload.get("medications", [])
+                if not isinstance(medications, list):
+                    self._send_json({"error": "medications must be a list of strings"}, 400)
+                    return
+                dose_overrides = payload.get("dose_overrides", {})
+                if not isinstance(dose_overrides, dict):
+                    self._send_json({"error": "dose_overrides must be an object"}, 400)
+                    return
+                result = self.engine.audit_regimen(medications, dose_overrides)
+                self._send_json(result)
                 return
-            self._send_json(self.scheduler.build_schedule(regimen, interactions))
-            return
 
-        if path == "/api/sbar":
-            audit_result = payload.get("audit_result", {})
-            if not isinstance(audit_result, dict):
-                self._send_json({"error": "audit_result must be an object"}, 400)
+            if path == "/api/reschedule":
+                regimen = payload.get("regimen", [])
+                interactions = payload.get("interactions", [])
+                if not isinstance(regimen, list) or not isinstance(interactions, list):
+                    self._send_json({"error": "regimen and interactions must be lists"}, 400)
+                    return
+                # A fresh optimizer per request keeps solver state thread-safe.
+                self._send_json(ScheduleOptimizer().build_schedule(regimen, interactions))
                 return
-            patient_name = str(payload.get("patient_name", "Patient Jane Doe"))[:120]
-            try:
-                age = int(payload.get("age", 74))
-            except (TypeError, ValueError):
-                age = 74
-            sbar = self.engine.generate_sbar_note(audit_result, patient_name, age)
-            self._send_json({"sbar": sbar})
-            return
 
-        self._send_text("Endpoint not found", 404)
+            if path == "/api/sbar":
+                audit_result = payload.get("audit_result", {})
+                if not isinstance(audit_result, dict):
+                    self._send_json({"error": "audit_result must be an object"}, 400)
+                    return
+                raw_name = payload.get("patient_name", "Patient Jane Doe")
+                patient_name = " ".join(str(raw_name).split())[:120] or "Patient"
+                try:
+                    age = int(payload.get("age", 74))
+                except (TypeError, ValueError):
+                    age = 74
+                age = max(0, min(120, age))
+                sbar = self.engine.generate_sbar_note(audit_result, patient_name, age)
+                self._send_json({"sbar": sbar})
+                return
+
+            self._send_text("Endpoint not found", 404)
+        except Exception as exc:  # keep the demo server alive on malformed input
+            self.log_error("Unhandled API error on %s: %s", path, exc)
+            self._send_json({"error": "Internal server error"}, 500)
 
     def log_message(self, fmt: str, *args) -> None:
         sys.stderr.write(f"[{self.log_date_time_string()}] {fmt % args}\n")
@@ -191,7 +213,7 @@ class PharmaGuardHandler(BaseHTTPRequestHandler):
 
 def run_server(port: int = 8080, host: str = "0.0.0.0") -> None:
     try:
-        httpd = ThreadingHTTPServer((host, port), PharmaGuardHandler)
+        httpd = PharmaGuardHTTPServer((host, port), PharmaGuardHandler)
     except OSError as exc:
         print(f"Could not bind to {host}:{port} — {exc}", file=sys.stderr)
         print("Is another server already running on this port?", file=sys.stderr)
@@ -211,7 +233,10 @@ def run_server(port: int = 8080, host: str = "0.0.0.0") -> None:
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "8080"))
+    try:
+        port = int(os.environ.get("PORT", "8080"))
+    except ValueError:
+        port = 8080
     host = os.environ.get("HOST", "0.0.0.0")
     if len(sys.argv) > 1 and sys.argv[1] in ("--port", "-p") and len(sys.argv) > 2:
         port = int(sys.argv[2])

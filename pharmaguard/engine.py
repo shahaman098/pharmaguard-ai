@@ -28,7 +28,7 @@ _NOISE_WORDS = {
     "each", "morning", "evening", "night", "bedtime", "as", "needed", "by",
     "mouth", "orally", "oral", "mg", "mcg", "g", "ml", "units", "unit", "iu",
     "meq", "percent", "extended", "release", "er", "xr", "sr", "dr", "hcl",
-    "hydrochloride", "sodium", "potassium", "calcium", "salt", "generic",
+    "hydrochloride", "sodium", "salt", "generic",
     "brand", "name", "patient", "directions", "refills", "remaining", "qty",
     "quantity", "date", "filled", "discard", "after", "before", "food",
     "meal", "meals", "water", "swallow", "whole", "do", "not", "crush",
@@ -140,11 +140,33 @@ class ClinicalSafetyEngine:
     # ------------------------------------------------------------------
     # Audit
     # ------------------------------------------------------------------
-    def audit_regimen(self, drug_list: List[str]) -> Dict[str, Any]:
-        """Run a comprehensive safety audit over a list of medication names."""
+    def audit_regimen(
+        self,
+        drug_list: List[str],
+        dose_overrides: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Run a comprehensive safety audit over a list of medication names.
+
+        ``dose_overrides`` maps a registry key, generic name, or brand to a dose
+        confirmed from a scanned label. It is optional; invalid values fall back
+        to the registry default dose.
+        """
         if not isinstance(drug_list, list):
             drug_list = []
-        drug_list = [str(item) for item in drug_list if str(item).strip()][:50]
+        drug_list = [
+            str(item).strip()
+            for item in drug_list
+            if item is not None and str(item).strip()
+        ][:50]
+        overrides: Dict[str, str] = {}
+        if isinstance(dose_overrides, dict):
+            for raw_key, value in dose_overrides.items():
+                canonical = self.normalize_drug_name(str(raw_key))
+                if canonical and isinstance(value, str) and value.strip():
+                    overrides[canonical] = " ".join(value.split())[:40]
+
+        def resolved_dose(key: str) -> str:
+            return overrides.get(key) or self.registry[key]["default_dose"]
 
         normalized_keys: List[str] = []
         unknown_drugs: List[str] = []
@@ -222,7 +244,7 @@ class ClinicalSafetyEngine:
                 "name": self.registry[key]["name"],
                 "brand": self.registry[key]["brand"],
                 "class": self.registry[key]["class"],
-                "default_dose": self.registry[key]["default_dose"],
+                "default_dose": resolved_dose(key),
                 "default_time": self.registry[key]["default_time"],
                 "food_warnings": self.registry[key]["food_warnings"],
                 "schedule": self.registry[key]["schedule"],
@@ -258,9 +280,9 @@ class ClinicalSafetyEngine:
     def _build_interaction(
         self, rule: Dict[str, Any], first: str, second: str
     ) -> Dict[str, Any]:
-        pair = rule.get("pair") or rule.get("keys") or (first, second)
+        pair = rule.get("pair")
         return {
-            "rule_id": f"{pair[0]}+{pair[1]}",
+            "rule_id": f"{pair[0]}+{pair[1]}" if pair else f"{first}+{second}",
             "drug_a": self.registry[first]["name"],
             "drug_b": self.registry[second]["name"],
             "pair_keys": (first, second),
@@ -329,35 +351,54 @@ class ClinicalSafetyEngine:
         age: int = 74,
     ) -> str:
         """Generate a structured SBAR draft for pharmacist/physician review."""
-        interactions = audit_result.get("interactions", [])
-        regimen = audit_result.get("regimen", [])
-        unknown = audit_result.get("unknown_drugs", [])
-        med_names = [f"{m['name']} ({m['default_dose']})" for m in regimen]
+        interactions = [
+            item for item in audit_result.get("interactions", [])
+            if isinstance(item, dict)
+        ]
+        regimen = [
+            item for item in audit_result.get("regimen", [])
+            if isinstance(item, dict)
+        ]
+        raw_unknown = audit_result.get("unknown_drugs", [])
+        unknown = [
+            str(item) for item in raw_unknown
+            if item is not None
+        ] if isinstance(raw_unknown, list) else []
+        med_names = [
+            f"{m.get('name', 'Medication')} ({m.get('default_dose', 'dose n/a')})"
+            for m in regimen
+        ]
 
-        critical = [i for i in interactions if i["severity"] == "CRITICAL"]
-        moderate = [i for i in interactions if i["severity"] == "MODERATE"]
+        critical = [i for i in interactions if i.get("severity") == "CRITICAL"]
+        moderate = [i for i in interactions if i.get("severity") == "MODERATE"]
 
         critical_lines = [
-            f"- {i['drug_a']} + {i['drug_b']}: {i['title']} — {i['mechanism']}"
+            f"- {i.get('drug_a', '?')} + {i.get('drug_b', '?')}: "
+            f"{i.get('title', 'Interaction')} — {i.get('mechanism', '')}"
             for i in critical
         ]
         moderate_lines = [
-            f"- {i['drug_a']} + {i['drug_b']}: {i['title']} — {i['clinical_action']}"
+            f"- {i.get('drug_a', '?')} + {i.get('drug_b', '?')}: "
+            f"{i.get('title', 'Interaction')} — {i.get('clinical_action', '')}"
             for i in moderate
         ]
 
         recommendations: List[str] = []
         for item in critical:
-            recommendations.append(f"Resolve {item['drug_a']} + {item['drug_b']}: {item['clinical_action']}")
+            recommendations.append(
+                f"Resolve {item.get('drug_a', '?')} + {item.get('drug_b', '?')}: "
+                f"{item.get('clinical_action', 'review the combination')}"
+            )
         for item in moderate:
-            if item["spacing_resolvable"]:
+            if item.get("spacing_resolvable"):
                 recommendations.append(
-                    f"Separate {item['drug_a']} and {item['drug_b']} by at least "
-                    f"{item['recommended_spacing_hours']:g} hours."
+                    f"Separate {item.get('drug_a', '?')} and {item.get('drug_b', '?')} "
+                    f"by at least {item.get('recommended_spacing_hours', 0):g} hours."
                 )
             else:
                 recommendations.append(
-                    f"Review {item['drug_a']} + {item['drug_b']} and arrange the recommended monitoring."
+                    f"Review {item.get('drug_a', '?')} + {item.get('drug_b', '?')} "
+                    f"and arrange the recommended monitoring."
                 )
         for drug in unknown:
             recommendations.append(

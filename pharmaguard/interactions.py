@@ -308,7 +308,7 @@ DRUG_REGISTRY: Dict[str, Dict[str, Any]] = {
         meal_relation="fasting", preferred_period="morning",
     ),
     "insulin": _drug(
-        "Insulin", "Basaglar / Humalog (example)", "Insulin",
+        "Insulin", "Basaglar / Humalog", "Insulin",
         "10 units", "With meals", "Not CYP-mediated",
         "Individualized dosing; rotate injection sites; monitor glucose.",
         ["basaglar", "humalog", "lantus", "novolog"],
@@ -463,7 +463,7 @@ DRUG_REGISTRY: Dict[str, Dict[str, Any]] = {
         preferred_period="bedtime",
     ),
     "iodinated_contrast": _drug(
-        "Iodinated Contrast", "CT/MRI contrast media", "Diagnostic contrast agent",
+        "Iodinated Contrast", "Iodinated contrast media", "Diagnostic contrast agent",
         "1 procedure", "Procedure", "Renal elimination",
         "Notify the care team of kidney disease, metformin use, or prior reactions.",
         ["contrast", "contrast dye", "iodinated contrast", "ct contrast", "mri contrast"],

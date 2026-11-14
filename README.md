@@ -6,7 +6,7 @@
 
 ![PharmaGuard AI](thumbnail.png)
 
-[![Tests](https://img.shields.io/badge/tests-35%2F35%20passing-brightgreen)](tests/test_safety_engine.py)
+[![Tests](https://img.shields.io/badge/tests-46%2F46%20passing-brightgreen)](tests/test_safety_engine.py)
 [![Knowledge base](https://img.shields.io/badge/demo%20KB-52%20drugs%20%C2%B7%2077%20rules-blue)](#knowledge-base)
 [![Dependencies](https://img.shields.io/badge/python%20deps-zero-success)](#quick-start)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -34,7 +34,7 @@ Most tools stop at a generic warning. PharmaGuard closes the loop:
 
 | Stage | What happens |
 |---|---|
-| **Multimodal intake** | Upload a prescription-label photo. Tesseract.js (an LSTM-based OCR engine) runs locally in the browser, then the app proposes medicines and doses for human confirmation. No image is uploaded. |
+| **Multimodal intake** | Upload a prescription-label photo. Tesseract.js (an LSTM-based OCR engine) loads on demand and runs locally in the browser, then the app proposes medicines and doses for human confirmation. Confirmed label doses flow into the audit, schedule, and SBAR. No image is uploaded. |
 | **Fail-safe audit** | 52-drug demo knowledge base and 77 curated rules covering CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia, and GI chelation. **Unknown drugs are marked UNVERIFIED — never “safe.”** |
 | **Constraint solver** | A deterministic backtracking scheduler enforces fasting windows, meal alignment, bedtime placement, twice-daily intervals, and 3–4 hour chelation spacing. Weekly and as-needed medicines are kept out of the daily timeline. |
 | **Clinician handoff** | Generates an SBAR draft with the verified interactions, unverified medicines, timing issues, and explicit monitoring recommendations. |
@@ -151,7 +151,7 @@ A `render.yaml` and `Procfile` are included for one-click Render/Railway-style d
 
 ```bash
 python3 -m unittest discover tests -v
-# Ran 35 tests — OK
+# Ran 46 tests — OK
 ```
 
 The suite covers:
@@ -162,6 +162,7 @@ The suite covers:
 - SBAR structure and unverified-medicine disclosure
 - scheduler spacing (cipro/calcium ≥ 3h, levothyroxine/iron ≥ 4h)
 - fasting, meal, bedtime, BID interval, weekly, and PRN behavior
+- label dose overrides and a 17-drug large-regimen fallback
 - deterministic output, day-window bounds, and critical-pair separation
 
 These are engineering tests, **not** a clinical validation study. See [`BENCHMARK-REPORT.md`](BENCHMARK-REPORT.md) for the honest scope and limitations.
@@ -182,13 +183,15 @@ These are engineering tests, **not** a clinical validation study. See [`BENCHMAR
 │   ├── app.js                  # OCR intake, graph, timeline, .ics export
 │   ├── style.css               # responsive clinical design system
 │   └── samples/sample-label.png
-├── tests/test_safety_engine.py # 35 tests
+├── tests/test_safety_engine.py # 46 tests
 ├── DEVPOST-COPY.md             # paste-ready submission story
 ├── DEMO-SCRIPT.md              # 2:30 walkthrough script
 ├── ONE-PAGE-SUMMARY.md/.html   # print-ready one-pager
 ├── BENCHMARK-REPORT.md         # verification scope and limitations
 ├── RESEARCH.md                 # research-oriented statement (YRI)
 ├── thumbnail.png               # Devpost thumbnail (1200x675)
+├── render.yaml / Procfile      # deployment configs
+├── requirements.txt            # zero external Python dependencies
 └── SUBMISSION-KIT.md           # step-by-step submission checklist
 ```
 
@@ -201,7 +204,7 @@ These are engineering tests, **not** a clinical validation study. See [`BENCHMAR
 | `GET` | `/api/health` | Liveness and KB version |
 | `GET` | `/api/meta` | KB metadata, sources, disclaimer, feature flags |
 | `GET` | `/api/drugs` | Registry with aliases and scheduling metadata |
-| `POST` | `/api/audit` | `{ "medications": ["Warfarin", "Ibuprofen"] }` |
+| `POST` | `/api/audit` | `{ "medications": ["Warfarin", "Ibuprofen"], "dose_overrides": { "warfarin": "2 mg" } }` (override optional) |
 | `POST` | `/api/reschedule` | `{ "regimen": [...], "interactions": [...] }` |
 | `POST` | `/api/sbar` | `{ "audit_result": {...}, "patient_name": "...", "age": 74 }` |
 
@@ -210,7 +213,7 @@ These are engineering tests, **not** a clinical validation study. See [`BENCHMAR
 ## Limitations & safety
 
 - The knowledge base is a **curated demo subset**, not a licensed clinical database.
-- OCR can misread labels; every detection requires human confirmation.
+- OCR can misread labels, and label directions/frequencies are not parsed; every detection requires human confirmation and the schedule uses registry-default frequencies.
 - The scheduler optimizes timing only. It does not calculate renal/hepatic doses, validate indications, or replace a pharmacist.
 - The app has no accounts, no database, and stores no patient data. Patient name/age are used only to render the SBAR and calendar artifacts; they are not persisted.
 - **Do not use this for real clinical decisions.**

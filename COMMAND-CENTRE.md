@@ -55,13 +55,14 @@ This story is easy to explain in 30 seconds, defensible under code review, and v
 
 ## 4. What shipped
 
-- Label OCR intake with human confirmation and paste fallback.
+- Label OCR intake with human confirmation and paste fallback; confirmed doses flow into the audit and schedule.
 - 52-drug / 77-rule knowledge base with alias-safe resolution.
 - Fail-safe `UNVERIFIED` state and coverage accounting.
 - Backtracking scheduler with explicit adjustments and unresolved-conflict reporting.
 - Interaction map, 24-hour timeline, weekly/PRN buckets.
 - Patient advice, SBAR draft, and `.ics` calendar export.
-- 35 automated tests, all passing.
+- 46 automated tests, all passing, including a 17-drug scheduler stress case.
+- Invalid API payloads return 4xx/5xx JSON instead of dropping the connection.
 - Deployment configs (`render.yaml`, `Procfile`, `Dockerfile`).
 
 ---
@@ -87,13 +88,13 @@ This story is easy to explain in 30 seconds, defensible under code review, and v
 | Claims exceed the build | Fixed | All docs rewritten to match shipped features |
 | No public repo | Fixed | Repo is live and pushed |
 | No video/PDF yet | Open | Owner tasks above |
-| Overclaiming clinical accuracy | Fixed | “35 tests on a curated demo set — not clinical validation” |
+| Overclaiming clinical accuracy | Fixed | “46 tests on a curated demo set — not clinical validation” |
 
 ---
 
 ## 7. Judge-facing proof points
 
-- Open the repo and run `python3 -m unittest discover tests -v` → 35/35.
+- Open the repo and run `python3 -m unittest discover tests -v` → 46/46.
 - Open the app, load the cardiac case, and see two critical interactions plus timing resolution.
 - Type an unknown medicine and watch the app refuse to call the regimen safe.
 - Export the schedule to a calendar and the SBAR draft for a clinician.

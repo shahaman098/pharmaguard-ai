@@ -16,8 +16,9 @@ the unresolved conflict instead of silently pretending it was fixed.
 
 from __future__ import annotations
 
+import time
 from itertools import combinations
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 DAY_START = 6 * 60
 DAY_END = 23 * 60
@@ -42,6 +43,7 @@ MEAL_WINDOWS = tuple(
 )
 
 NODE_LIMIT = 200_000
+SEARCH_TIME_LIMIT_SECONDS = 2.0
 
 
 def _hhmm(minutes: int) -> str:
@@ -74,10 +76,6 @@ def _slot_label(minutes: int) -> str:
     return "Bedtime"
 
 
-def _in_any_window(minutes: int, windows: Sequence[Tuple[int, int]]) -> bool:
-    return any(start <= minutes <= end for start, end in windows)
-
-
 class ScheduleOptimizer:
     """Computes a daily administration plan with explicit constraint checks."""
 
@@ -98,6 +96,11 @@ class ScheduleOptimizer:
             regimen = []
         if not isinstance(interactions, list):
             interactions = []
+        regimen = [
+            med for med in regimen
+            if isinstance(med, dict) and (med.get("key") or med.get("name"))
+        ]
+        interactions = [item for item in interactions if isinstance(item, dict)]
 
         plans: List[Dict[str, Any]] = []
         prn: List[Dict[str, Any]] = []
@@ -136,6 +139,7 @@ class ScheduleOptimizer:
             })
 
         unresolved = self._unresolved(spacing_constraints, assignment)
+        critical_conflicts = self._critical_conflicts(critical_constraints, assignment)
         adjustments = self._adjustments(plans, assignment, all_constraints)
 
         return {
@@ -145,9 +149,10 @@ class ScheduleOptimizer:
             "prn": prn,
             "adjustments_made": adjustments,
             "unresolved": unresolved,
+            "critical_conflicts": critical_conflicts,
             "total_slots_used": len(groups),
             "total_doses": len(doses),
-            "constraints_checked": len(spacing_constraints),
+            "constraints_checked": len(all_constraints),
             "solver": solver_meta,
             "disclaimer": (
                 "Demo schedule only. Confirm every dose and timing change with a "
@@ -319,20 +324,29 @@ class ScheduleOptimizer:
         total_candidates = sum(len(plan["candidates"]) for plan in plans)
         attempts = 0
 
-        for relax_factor in (1.0, 0.5, 0.0):
+        # Progressively relax hard constraints. The final stage drops every
+        # constraint so the caller always receives a complete schedule; any
+        # violations are reported in `unresolved` / `critical_conflicts`.
+        for relax_factor, relax_critical in (
+            (1.0, False),
+            (0.5, False),
+            (0.0, False),
+            (0.0, True),
+        ):
             relaxed_constraints = [
                 {
                     **constraint,
                     "hours": (
-                        constraint["hours"]
-                        if constraint.get("kind") == "critical"
-                        else constraint["hours"] * relax_factor
+                        constraint["hours"] * relax_factor
+                        if (constraint.get("kind") != "critical" or relax_critical)
+                        else constraint["hours"]
                     ),
                 }
                 for constraint in constraints
             ]
             assignment: Dict[str, List[int]] = {}
             self._nodes = 0
+            self._deadline = time.perf_counter() + SEARCH_TIME_LIMIT_SECONDS
             result = self._search(ordered, relaxed_constraints, assignment, 0)
             attempts += 1
             if result is not None:
@@ -341,16 +355,17 @@ class ScheduleOptimizer:
                     "candidate_schedules": total_candidates,
                     "nodes_explored": self._nodes,
                     "relaxation": relax_factor,
-                    "fully_constrained": relax_factor == 1.0,
+                    "critical_relaxed": relax_critical,
+                    "fully_constrained": relax_factor == 1.0 and not relax_critical,
                     "attempts": attempts,
                 }
 
-        # Should be unreachable because relax_factor=0 removes all spacing.
         return {}, {
             "algorithm": "deterministic backtracking with interval constraints",
             "candidate_schedules": total_candidates,
             "nodes_explored": getattr(self, "_nodes", 0),
             "relaxation": None,
+            "critical_relaxed": True,
             "fully_constrained": False,
             "attempts": attempts,
         }
@@ -363,7 +378,9 @@ class ScheduleOptimizer:
         index: int,
     ) -> Optional[Dict[str, List[int]]]:
         self._nodes += 1
-        if self._nodes > NODE_LIMIT:
+        if self._nodes > NODE_LIMIT or time.perf_counter() > getattr(
+            self, "_deadline", float("inf")
+        ):
             return None
         if index == len(plans):
             return dict(assignment)
@@ -469,7 +486,8 @@ class ScheduleOptimizer:
             pair = item.get("pair_keys", ())
             if key in pair:
                 other = pair[0] if key == pair[1] else pair[1]
-                name = item["drug_b"] if other == pair[1] else item["drug_a"]
+                name = item.get("drug_b") if other == pair[1] else item.get("drug_a")
+                name = name or other
                 if name not in partners:
                     partners.append(name)
         return partners
@@ -495,6 +513,30 @@ class ScheduleOptimizer:
                     "actual_hours": round(actual, 1),
                 })
         return unresolved
+
+    def _critical_conflicts(
+        self,
+        constraints: List[Dict[str, Any]],
+        assignment: Dict[str, List[int]],
+    ) -> List[Dict[str, Any]]:
+        """Report critical pairs that could not be separated in the final plan."""
+        conflicts = []
+        for constraint in constraints:
+            first = assignment.get(constraint["a"])
+            second = assignment.get(constraint["b"])
+            if not first or not second:
+                continue
+            actual = min(abs(a - b) for a in first for b in second) / 60
+            if actual + 0.01 < constraint["hours"]:
+                conflicts.append({
+                    "drug_a": constraint["a"],
+                    "drug_b": constraint["b"],
+                    "title": constraint["title"],
+                    "required_hours": constraint["hours"],
+                    "actual_hours": round(actual, 1),
+                    "severity": "CRITICAL",
+                })
+        return conflicts
 
     def _adjustments(
         self,

@@ -12,7 +12,7 @@
 |---|---|
 | Working prototype | ✅ Complete: OCR intake, audit, interaction map, solver, calendar, SBAR |
 | Public GitHub repo | ✅ Live at the URL above |
-| Tests | ✅ 35/35 passing |
+| Tests | ✅ 46/46 passing |
 | One-page PDF | ⏳ Print `ONE-PAGE-SUMMARY.html` to PDF |
 | Demo video | ⏳ Record from `DEMO-SCRIPT.md` (2:30 target) |
 | Live demo URL | ⏳ Deploy with `render.yaml` / `Procfile`, then add the URL |
@@ -44,7 +44,7 @@ Smoke test:
 - [ ] **Add to calendar** downloads `pharmaguard-schedule.ics`.
 - [ ] **Export SBAR** opens a draft with all four sections and the disclaimer.
 - [ ] **Unverified medicine** preset shows `INCOMPLETE — UNVERIFIED MEDICATIONS`, 75/100, 67% verified.
-- [ ] **Scan prescription label → Try a sample label** detects five medicines and doses. (First run may take 10–20s while OCR loads.)
+- [ ] **Scan prescription label → Try a sample label** detects six medicines and doses. (First run may take 10–20s while OCR loads.)
 - [ ] **Re-optimize** re-runs the solver and shows a toast.
 - [ ] No console errors in DevTools.
 
@@ -106,7 +106,7 @@ Create the ZIP:
 
 ```bash
 zip -r dsh-hacks-v2-submission.zip . \
-  -x "*.git*" "*.DS_Store*" "*__pycache__*" "*.mp4" "*.mov"
+  -x "*.git*" ".notes/*" "*.DS_Store*" "*__pycache__*" "*.mp4" "*.mov" "*.zip"
 ```
 
 ---
@@ -120,9 +120,9 @@ Open an incognito window and check:
 - [ ] GitHub repo loads without a 404 and shows the README.
 - [ ] One-page PDF is readable and one page.
 - [ ] ZIP downloads and contains `server.py`, `pharmaguard/`, `static/`, `tests/`.
-- [ ] No placeholder text like `<YOUR_USERNAME>`, `[TODO]`, or `localhost` in the submission copy.
+- [ ] No unresolved placeholders like `<YOUR_USERNAME>` or `[TODO]` in the submission copy. (Local `localhost` run commands are fine.)
 - [ ] Live demo URL works (if deployed).
-- [ ] Submission says “35 tests,” “52 drugs,” “77 rules,” not “100% accuracy.”
+- [ ] Submission says “46 tests,” “52 drugs,” “77 rules,” not “100% accuracy.”
 
 ---
 

@@ -4,8 +4,8 @@
 Usage:
   python3 check_video.py path/to/video.mp4
 
-Validates that the video duration falls squarely in the optimal 2:00–3:00 minute window
-required for hackathon submissions.
+Checks the video against the project's recommended 2:00–3:00 minute demo window.
+(DSH Hacks V2 does not publish a hard duration requirement; this is a quality target.)
 """
 import struct
 import sys

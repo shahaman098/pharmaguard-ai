@@ -3,7 +3,7 @@
 **Project:** PharmaGuard AI
 **Event:** DSH Hacks V2 (AI × Healthcare)
 **Knowledge base:** v2.0 · 52 medicines · 77 curated rules
-**Test suite:** 35 tests · 35 passing
+**Test suite:** 46 tests · 46 passing
 **Date:** 2026-11-14
 
 > **Scope statement:** This is an engineering verification report, **not** a clinical validation study. The knowledge base is a curated demonstration subset. No sensitivity, specificity, or real-world safety claim is made.
@@ -23,6 +23,8 @@
 | Scheduler spacing | Ciprofloxacin/calcium ≥ 3h; levothyroxine/iron ≥ 4h | ✅ |
 | Scheduler rules | Fasting, meals, bedtime, BID intervals, weekly, PRN | ✅ |
 | Scheduler safety | Critical pairs are not co-scheduled; unresolved conflicts reported | ✅ |
+| Large regimens | 17-drug stress case always receives a complete schedule | ✅ |
+| Label dose overrides | Confirmed scanned doses reach the audit, schedule, and SBAR | ✅ |
 | Determinism | Repeated runs produce identical dose times | ✅ |
 | Bounds | All doses fall inside the 06:00–23:00 day window | ✅ |
 
@@ -35,7 +37,7 @@ python3 -m unittest discover tests -v
 Observed:
 
 ```text
-Ran 35 tests in 0.02s
+Ran 46 tests in 0.02s
 
 OK
 ```
@@ -107,7 +109,7 @@ This report does **not** establish:
 - OCR accuracy across real-world lighting, curvature, glare, or handwriting;
 - usability with patients or clinicians.
 
-The 35 tests are engineering checks on a small curated set. They are useful for regression and demo credibility, not for regulatory or bedside claims.
+The 46 tests are engineering checks on a small curated set. They are useful for regression and demo credibility, not for regulatory or bedside claims.
 
 ---
 
@@ -118,6 +120,7 @@ The 35 tests are engineering checks on a small curated set. They are useful for 
 | Curated rules may be incomplete | Fail-safe unknown handling; explicit coverage percentage | A known drug can still have an unmodeled interaction |
 | Hardcoded aliases may miss variants | Token-aware alias index + manual entry | Unusual brand names may not resolve |
 | OCR can misread a label | Human confirmation step; paste fallback | A user could confirm a wrong detection |
+| Label directions are not parsed | Registry-default frequencies; UI asks for pharmacist confirmation | A label with a non-default frequency may be scheduled incorrectly |
 | Scheduler spacing is conservative | Reports exact separation and unresolved conflicts | Timing does not fix pharmacodynamic interactions |
 | Risk score is heuristic | Transparent counts and coverage; no “safe” claim with unknowns | Score is not a clinical probability |
 
@@ -132,7 +135,7 @@ python3 -m unittest discover tests -v
 python3 server.py --port 8080
 ```
 
-Expected: 35 tests pass; the app serves at `http://localhost:8080`.
+Expected: 46 tests pass; the app serves at `http://localhost:8080`.
 
 ---
 

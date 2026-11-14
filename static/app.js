@@ -21,12 +21,17 @@ const PRESETS = {
 };
 
 let currentRegimen = [...PRESETS.cardiac];
+let doseOverrides = new Map();
 let allAvailableDrugs = [];
 let latestAuditResult = null;
 let latestSchedule = null;
+let auditRequestId = 0;
+let scheduleRequestId = 0;
 let scanDetected = [];
+let scanBusy = false;
 let tesseractWorker = null;
 let tesseractLoading = null;
+let tesseractScriptPromise = null;
 
 // DOM shortcuts
 const $ = (id) => document.getElementById(id);
@@ -107,6 +112,7 @@ function setupEventListeners() {
       document.querySelectorAll(".btn-preset").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
       currentRegimen = [...(PRESETS[button.dataset.preset] || [])];
+      doseOverrides.clear();
       renderRegimenCards();
       runSafetyAudit();
     });
@@ -114,18 +120,13 @@ function setupEventListeners() {
 
   $("btn-add-drug").addEventListener("click", () => {
     const selected = drugDropdown.value;
-    if (selected && !currentRegimen.includes(selected)) {
-      currentRegimen.push(selected);
-      renderRegimenCards();
-      runSafetyAudit();
+    if (!selected) {
+      toast("Choose a medication first.", "error");
+      return;
     }
-  });
-
-  drugDropdown.addEventListener("change", () => {
-    const selected = drugDropdown.value;
-    if (!selected) return;
     if (!currentRegimen.includes(selected)) {
       currentRegimen.push(selected);
+      clearPresetSelection();
       renderRegimenCards();
       runSafetyAudit();
     }
@@ -134,6 +135,8 @@ function setupEventListeners() {
 
   $("btn-clear-all").addEventListener("click", () => {
     currentRegimen = [];
+    doseOverrides.clear();
+    clearPresetSelection();
     renderRegimenCards();
     runSafetyAudit();
   });
@@ -194,7 +197,10 @@ function setupEventListeners() {
 
   const fileInput = $("scan-file");
   fileInput.addEventListener("change", () => {
-    if (fileInput.files && fileInput.files[0]) handleScanFile(fileInput.files[0]);
+    const file = fileInput.files && fileInput.files[0];
+    if (file) handleScanFile(file);
+    // Allow selecting the same file again for a re-scan.
+    fileInput.value = "";
   });
 
   const dropzone = $("scan-dropzone");
@@ -214,6 +220,12 @@ function setupEventListeners() {
     const file = event.dataTransfer?.files?.[0];
     if (file) handleScanFile(file);
   });
+  dropzone.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      $("scan-file").click();
+    }
+  });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
@@ -232,6 +244,12 @@ function findDrug(name) {
   );
 }
 
+function clearPresetSelection() {
+  document.querySelectorAll(".btn-preset").forEach((button) => {
+    button.classList.remove("active");
+  });
+}
+
 function renderRegimenCards() {
   regimenListEl.innerHTML = "";
   medCountBadge.textContent = `${currentRegimen.length} Medication${currentRegimen.length === 1 ? "" : "s"}`;
@@ -247,12 +265,14 @@ function renderRegimenCards() {
     card.className = `med-card${drug ? "" : " med-card-unknown"}`;
 
     if (drug) {
+      const override = doseOverrides.get(drug.key);
+      const displayDose = override || drug.default_dose;
       card.innerHTML = `
         <div class="med-info">
-          <h4>${escapeHtml(drug.name)} <span class="med-brand">(${escapeHtml(drug.brand)})</span></h4>
+          <h3>${escapeHtml(drug.name)} <span class="med-brand">(${escapeHtml(drug.brand)})</span></h3>
           <div class="med-class">${escapeHtml(drug.class)}</div>
           <div class="med-details-row">
-            <span>Dose: ${escapeHtml(drug.default_dose)}</span>
+            <span>Dose: ${escapeHtml(displayDose)}${override ? ' <span class="dose-source">from label</span>' : ""}</span>
             <span>•</span>
             <span>${escapeHtml(drug.food_warnings)}</span>
           </div>
@@ -262,7 +282,7 @@ function renderRegimenCards() {
     } else {
       card.innerHTML = `
         <div class="med-info">
-          <h4>${escapeHtml(medName)} <span class="unverified-pill">UNVERIFIED</span></h4>
+          <h3>${escapeHtml(medName)} <span class="unverified-pill">UNVERIFIED</span></h3>
           <div class="med-class">Not in the demo knowledge base</div>
           <div class="med-details-row">
             <span>This medicine will not be treated as safe. Confirm it with a pharmacist.</span>
@@ -273,7 +293,11 @@ function renderRegimenCards() {
     }
 
     card.querySelector(".med-remove-btn").addEventListener("click", () => {
+      const removed = currentRegimen[index];
+      const removedDrug = findDrug(removed);
       currentRegimen.splice(index, 1);
+      if (removedDrug) doseOverrides.delete(removedDrug.key);
+      clearPresetSelection();
       renderRegimenCards();
       runSafetyAudit();
     });
@@ -300,9 +324,11 @@ function renderUnverifiedPanel(result) {
 // Audit
 // ---------------------------------------------------------------------------
 async function runSafetyAudit() {
+  const requestId = ++auditRequestId;
+  latestSchedule = null;
+
   if (currentRegimen.length === 0) {
     latestAuditResult = null;
-    latestSchedule = null;
     resetAuditView();
     return;
   }
@@ -311,10 +337,14 @@ async function runSafetyAudit() {
     const res = await fetch("/api/audit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ medications: currentRegimen })
+      body: JSON.stringify({
+        medications: currentRegimen,
+        dose_overrides: Object.fromEntries(doseOverrides)
+      })
     });
     if (!res.ok) throw new Error(`Audit failed (${res.status})`);
     const result = await res.json();
+    if (requestId !== auditRequestId) return;
     latestAuditResult = result;
 
     updateScoreCard(result);
@@ -322,8 +352,9 @@ async function runSafetyAudit() {
     renderInteractionGraph(result);
     renderPatientAdvice(result);
     renderUnverifiedPanel(result);
-    await fetchAndRenderSchedule(result);
+    await fetchAndRenderSchedule(result, requestId);
   } catch (error) {
+    if (requestId !== auditRequestId) return;
     console.error("Audit error:", error);
     toast("The audit could not run. Check that the local server is running.", "error");
   }
@@ -508,7 +539,8 @@ function renderInteractionGraph(result) {
 // ---------------------------------------------------------------------------
 // Schedule
 // ---------------------------------------------------------------------------
-async function fetchAndRenderSchedule(auditResult) {
+async function fetchAndRenderSchedule(auditResult, parentRequestId = auditRequestId) {
+  const requestId = ++scheduleRequestId;
   try {
     const res = await fetch("/api/reschedule", {
       method: "POST",
@@ -520,11 +552,13 @@ async function fetchAndRenderSchedule(auditResult) {
     });
     if (!res.ok) throw new Error(`Schedule failed (${res.status})`);
     const schedule = await res.json();
+    if (parentRequestId !== auditRequestId || requestId !== scheduleRequestId) return;
     latestSchedule = schedule;
     renderTimeline(schedule);
     renderWeeklyAndPrn(schedule);
     renderScheduleNotes(schedule);
   } catch (error) {
+    if (parentRequestId !== auditRequestId || requestId !== scheduleRequestId) return;
     console.error("Schedule error:", error);
     timelineContainer.innerHTML = '<div class="empty-state">Could not build a schedule.</div>';
   }
@@ -606,6 +640,7 @@ function renderWeeklyAndPrn(schedule) {
 function renderScheduleNotes(schedule) {
   const adjustments = schedule.adjustments_made || [];
   const unresolved = schedule.unresolved || [];
+  const criticalConflicts = schedule.critical_conflicts || [];
   const solver = schedule.solver || {};
 
   const adjustmentHtml = adjustments.length
@@ -616,15 +651,25 @@ function renderScheduleNotes(schedule) {
     ? `<div class="note-card unresolved"><h4>Unresolved timing conflicts</h4><ul>${unresolved.map((item) => `<li>${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)}: ${item.actual_hours}h apart, ${item.required_hours}h recommended.</li>`).join("")}</ul></div>`
     : "";
 
+  const criticalHtml = criticalConflicts.length
+    ? `<div class="note-card critical-conflicts"><h4>Critical pairs could not be fully separated</h4><p>Do not use this timeline as a medication order. Review the contraindications above.</p><ul>${criticalConflicts.map((item) => `<li>${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)}: ${item.actual_hours}h apart, ${item.required_hours}h minimum for administration.</li>`).join("")}</ul></div>`
+    : "";
+
+  const constraintStatus = solver.fully_constrained
+    ? "all spacing constraints satisfied"
+    : solver.critical_relaxed
+      ? "constraints relaxed — review critical conflicts"
+      : "spacing relaxed";
+
   const solverHtml = `
     <div class="solver-meta">
       ${escapeHtml(solver.algorithm || "constraint solver")} ·
       ${solver.nodes_explored || 0} search nodes ·
-      ${solver.fully_constrained ? "all spacing constraints satisfied" : "spacing relaxed"}
+      ${constraintStatus}
     </div>
   `;
 
-  scheduleNotes.innerHTML = adjustmentHtml + unresolvedHtml + solverHtml;
+  scheduleNotes.innerHTML = adjustmentHtml + unresolvedHtml + criticalHtml + solverHtml;
 }
 
 function statusLabel(status) {
@@ -654,7 +699,9 @@ function renderPatientAdvice(result) {
 // Calendar export (.ics)
 // ---------------------------------------------------------------------------
 function downloadCalendar() {
-  if (!latestSchedule || !(latestSchedule.doses || []).length) {
+  const hasDaily = !!(latestSchedule && (latestSchedule.doses || []).length);
+  const hasWeekly = !!(latestSchedule && (latestSchedule.weekly || []).length);
+  if (!hasDaily && !hasWeekly) {
     toast("Run an audit with at least one scheduled medicine first.", "error");
     return;
   }
@@ -796,26 +843,32 @@ async function loadSampleLabel() {
 }
 
 async function handleScanFile(file) {
-  if (!file) return;
+  if (!file || scanBusy) return;
+  scanBusy = true;
+  try {
+    await processScanFile(file);
+  } finally {
+    scanBusy = false;
+  }
+}
+
+async function processScanFile(file) {
   if (file.size > 8 * 1024 * 1024) {
     toast("Image is larger than 8 MB. Choose a smaller photo.", "error");
     return;
   }
 
   const preview = $("scan-preview");
+  if (preview.src.startsWith("blob:")) URL.revokeObjectURL(preview.src);
   preview.src = URL.createObjectURL(file);
   $("scan-preview-wrap").classList.remove("hidden");
   resetScanResults(true);
-
-  if (typeof Tesseract === "undefined") {
-    showScanError("The OCR library could not load. Use the paste-text option below.");
-    return;
-  }
 
   $("scan-progress").classList.remove("hidden");
   updateScanProgress(5, "Loading the label reader…");
 
   try {
+    await loadTesseract();
     const worker = await getTesseractWorker();
     updateScanProgress(35, "Reading the label…");
     const { data } = await worker.recognize(file);
@@ -827,10 +880,33 @@ async function handleScanFile(file) {
   }
 }
 
+function loadTesseract() {
+  if (typeof Tesseract !== "undefined") return Promise.resolve(Tesseract);
+  if (tesseractScriptPromise) return tesseractScriptPromise;
+
+  tesseractScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    script.async = true;
+    script.onload = () => {
+      if (typeof Tesseract !== "undefined") resolve(Tesseract);
+      else reject(new Error("Tesseract.js did not initialize"));
+    };
+    script.onerror = () => reject(new Error("Tesseract.js failed to load"));
+    document.head.appendChild(script);
+  }).catch((error) => {
+    tesseractScriptPromise = null;
+    throw error;
+  });
+
+  return tesseractScriptPromise;
+}
+
 async function getTesseractWorker() {
   if (tesseractWorker) return tesseractWorker;
   if (tesseractLoading) return tesseractLoading;
 
+  await loadTesseract();
   tesseractLoading = Tesseract.createWorker("eng", 1, {
     logger: (message) => {
       if (message.status === "recognizing text") {
@@ -984,17 +1060,29 @@ function addScannedMedications() {
   if (!selected.length) return;
 
   let added = 0;
+  let dosesUpdated = 0;
   selected.forEach((item) => {
     if (!currentRegimen.some((name) => name.toLowerCase() === item.name.toLowerCase())) {
       currentRegimen.push(item.name);
       added += 1;
     }
+    if (item.key && item.dose) {
+      const previous = doseOverrides.get(item.key);
+      if (previous !== item.dose) {
+        doseOverrides.set(item.key, item.dose);
+        dosesUpdated += 1;
+      }
+    }
   });
 
   scanModal.classList.remove("open");
+  clearPresetSelection();
   renderRegimenCards();
   runSafetyAudit();
-  toast(added ? `Added ${added} medicine${added === 1 ? "" : "s"} from the label.` : "Those medicines are already in the regimen.", added ? "success" : "info");
+  const parts = [];
+  if (added) parts.push(`added ${added} medicine${added === 1 ? "" : "s"}`);
+  if (dosesUpdated) parts.push(`applied ${dosesUpdated} label dose${dosesUpdated === 1 ? "" : "s"}`);
+  toast(parts.length ? `From label: ${parts.join(", ")}.` : "Those medicines are already in the regimen.", parts.length ? "success" : "info");
 }
 
 function showScanError(message) {
@@ -1013,8 +1101,10 @@ function resetScanResults(keepPreview = false) {
   $("scan-results").classList.add("hidden");
   $("btn-add-scanned").disabled = true;
   if (!keepPreview) {
+    const preview = $("scan-preview");
+    if (preview.src.startsWith("blob:")) URL.revokeObjectURL(preview.src);
     $("scan-preview-wrap").classList.add("hidden");
-    $("scan-preview").removeAttribute("src");
+    preview.removeAttribute("src");
     $("scan-file").value = "";
   }
 }

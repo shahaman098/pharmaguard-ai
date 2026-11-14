@@ -30,7 +30,7 @@ The dangerous gaps are often ordinary: warfarin plus an NSAID, a statin plus a s
 
 PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 
-1. **Read the regimen from a label photo.** The app uses Tesseract.js, an LSTM-based OCR engine, to read a prescription label in the browser, then proposes medicines and doses for the user to confirm. The image never leaves the browser.
+1. **Read the regimen from a label photo.** The app uses Tesseract.js, an LSTM-based OCR engine, to read a prescription label in the browser, then proposes medicines and doses for the user to confirm. Confirmed doses flow through the audit and schedule. The image never leaves the browser.
 2. **Screen against a deterministic knowledge base.** 52 medicines and 77 curated rules cover CYP450 interactions, renal clearance, pharmacodynamic synergy, QT prolongation, bleeding, hyperkalemia, and GI chelation. Results are reproducible and auditable.
 3. **Fail closed, not open.** If a medicine is not in the demo knowledge base, the app marks it **UNVERIFIED** and refuses to call the regimen safe. This was a deliberate design choice: a false “safe” is worse than an honest “I don’t know.”
 4. **Resolve timing with a real constraint solver.** A deterministic backtracking scheduler enforces fasting windows, meal alignment, bedtime placement, twice-daily intervals, and 3–4 hour chelation spacing. It reports unresolved conflicts instead of pretending they were fixed.
@@ -44,7 +44,7 @@ PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 - **Optimization layer:** a backtracking search over interval constraints. The solver checks meal/fasting rules, minimum intra-dose intervals, and interaction-driven spacing, then reports the reasons for every move.
 - **Interface:** a responsive single-page clinical UI with a regimen panel, risk score, interaction map, 24-hour timeline, patient guide, and SBAR modal. Vanilla HTML/CSS/JS — no framework overhead.
 - **API:** a zero-dependency Python HTTP server exposing `/api/audit`, `/api/reschedule`, `/api/sbar`, `/api/drugs`, and `/api/meta`.
-- **Verification:** 35 automated tests covering aliases, high-yield interactions, fail-safe behavior, SBAR structure, scheduler spacing, meal/fasting placement, weekly/PRN handling, determinism, and day-window bounds.
+- **Verification:** 46 automated tests covering aliases, high-yield interactions, fail-safe behavior, SBAR structure, scheduler spacing, meal/fasting placement, weekly/PRN handling, label dose overrides, large-regimen fallback, determinism, and day-window bounds.
 
 ### 🧗 Challenges We Ran Into
 
@@ -59,7 +59,7 @@ PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 - A genuinely fail-safe audit that surfaces unknown medicines instead of hiding them.
 - A real interval-constraint scheduler with deterministic, testable output.
 - A focused demo knowledge base (52 drugs, 77 rules) that a judge can audit in the repo.
-- 35/35 tests passing with no external Python dependencies.
+- 46/46 tests passing with no external Python dependencies.
 
 ### 📚 What We Learned
 
@@ -81,7 +81,7 @@ We used AI coding assistants for scaffolding, test-case synthesis, and documenta
 
 ### 🧪 Verification & Limitations
 
-- **35 automated tests pass** (`python3 -m unittest discover tests -v`).
+- **46 automated tests pass** (`python3 -m unittest discover tests -v`).
 - The tests cover 20+ curated high-yield interaction pairs and scheduler properties.
 - The knowledge base is a **curated demo subset**, not a validated clinical database.
 - This is not a clinical validation study, and the app is not for real clinical use.
