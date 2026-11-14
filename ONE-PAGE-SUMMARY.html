@@ -1,280 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>PharmaGuard AI — One-Page Project Summary</title>
-  <style>
-    @page {
-      size: A4 portrait;
-      margin: 12mm;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: #1e293b;
-      background: #ffffff;
-      line-height: 1.35;
-      font-size: 10.5pt;
-    }
-    .header {
-      border-bottom: 2px solid #0284c7;
-      padding-bottom: 8px;
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-    }
-    .title-area h1 {
-      font-size: 20pt;
-      color: #0f172a;
-      letter-spacing: -0.5px;
-      margin-bottom: 2px;
-    }
-    .title-area .tagline {
-      font-size: 11pt;
-      color: #0284c7;
-      font-weight: 600;
-    }
-    .meta-box {
-      text-align: right;
-      font-size: 9pt;
-      color: #64748b;
-    }
-    .meta-box strong {
-      color: #334155;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .full-width {
-      grid-column: span 2;
-    }
-    .card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 10px 12px;
-    }
-    .card h2 {
-      font-size: 11pt;
-      color: #0f172a;
-      border-bottom: 1px solid #cbd5e1;
-      padding-bottom: 4px;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .badge-danger {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 8pt;
-      font-weight: 600;
-    }
-    .badge-success {
-      background: #dcfce7;
-      color: #166534;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 8pt;
-      font-weight: 600;
-    }
-    ul {
-      padding-left: 16px;
-      margin-top: 4px;
-    }
-    li {
-      margin-bottom: 3px;
-    }
-    .flow-steps {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .step {
-      flex: 1;
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
-      border-radius: 4px;
-      padding: 6px;
-      font-size: 8.5pt;
-      text-align: center;
-    }
-    .step strong {
-      display: block;
-      color: #0284c7;
-      margin-bottom: 2px;
-    }
-    .table-container {
-      margin-top: 6px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 8.5pt;
-    }
-    th, td {
-      border: 1px solid #cbd5e1;
-      padding: 4px 6px;
-      text-align: left;
-    }
-    th {
-      background: #e2e8f0;
-      color: #334155;
-    }
-    .footer {
-      border-top: 1px solid #e2e8f0;
-      padding-top: 6px;
-      font-size: 8.5pt;
-      color: #64748b;
-      display: flex;
-      justify-content: space-between;
-      margin-top: 8px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>PharmaGuard AI — One-Page Project Summary</title>
+<style>
+  @page { size: Letter; margin: 0.45in; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #0f172a;
+    font-size: 8.5pt;
+    line-height: 1.26;
+    margin: 0;
+    background: #fff;
+  }
+  .page { max-width: 7.6in; margin: 0 auto; }
+  header {
+    border-bottom: 3px solid #0b4f6c;
+    padding-bottom: 5px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  h1 { font-size: 18pt; margin: 0; letter-spacing: -0.4px; color: #0b4f6c; }
+  .tagline { font-size: 8.4pt; color: #475569; margin-top: 1px; }
+  .event { text-align: right; font-size: 8pt; color: #64748b; line-height: 1.35; }
+  .event strong { color: #0b4f6c; }
+  h2 {
+    font-size: 9.2pt;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #0b4f6c;
+    margin: 7px 0 2px;
+    border-bottom: 1px solid #dbe4ea;
+    padding-bottom: 2px;
+  }
+  p { margin: 0 0 3px; }
+  ul, ol { margin: 0; padding-left: 16px; }
+  li { margin-bottom: 1.6px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .arch {
+    background: #f6f9fb;
+    border: 1px solid #dbe4ea;
+    border-radius: 5px;
+    padding: 5px 8px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 6.9pt;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    margin: 4px 0;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin: 4px 0;
+  }
+  .stat {
+    border: 1px solid #dbe4ea;
+    border-radius: 5px;
+    padding: 4px 5px;
+    text-align: center;
+    background: #f8fafc;
+  }
+  .stat strong { display: block; font-size: 11pt; color: #0b4f6c; line-height: 1.1; }
+  .stat span { font-size: 6.6pt; color: #64748b; }
+  table { width: 100%; border-collapse: collapse; font-size: 7.7pt; margin: 2px 0; }
+  th, td { text-align: left; border-bottom: 1px solid #e2e8f0; padding: 1.8px 3px; vertical-align: top; }
+  th { color: #475569; font-size: 7.6pt; text-transform: uppercase; letter-spacing: 0.04em; }
+  .callout {
+    background: #fff7ed;
+    border-left: 3px solid #d97706;
+    padding: 4px 7px;
+    margin: 4px 0;
+    font-size: 7.9pt;
+  }
+  .footer {
+    margin-top: 6px;
+    border-top: 1px solid #dbe4ea;
+    padding-top: 4px;
+    font-size: 7pt;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .ok { color: #166534; font-weight: 700; }
+  a { color: #0b4f6c; text-decoration: none; }
+</style>
 </head>
 <body>
-
-  <div class="header">
-    <div class="title-area">
+<div class="page">
+  <header>
+    <div>
       <h1>PharmaGuard AI</h1>
-      <div class="tagline">Multimodal Prescription Safety & Polypharmacy Co-Pilot</div>
+      <div class="tagline">Scan prescriptions · catch dangerous interactions · build a safe 24-hour schedule</div>
     </div>
-    <div class="meta-box">
-      <div><strong>Event:</strong> DSH Hacks V2 (AI × Healthcare)</div>
-      <div><strong>Category:</strong> Main Software Track & YRI Research</div>
-      <div><strong>License:</strong> Open Source (MIT)</div>
+    <div class="event">
+      <strong>DSH Hacks V2</strong><br>
+      AI × Healthcare<br>
+      github.com/shahaman098/pharmaguard-ai
+    </div>
+  </header>
+
+  <h2>The problem</h2>
+  <p>Adverse drug events are a leading preventable cause of emergency visits. Polypharmacy — five or more medicines across multiple prescribers — is routine for older adults. The highest-risk gaps are ordinary: warfarin plus an NSAID, a statin plus a strong CYP3A4 inhibitor, calcium binding ciprofloxacin in the gut, or levothyroxine and iron taken together. Most tools stop at a generic warning. They do not resolve the timing, and they do not give the patient or clinician a next action.</p>
+
+  <h2>The solution</h2>
+  <ol>
+    <li><strong>Read the regimen from a label photo.</strong> LSTM-based browser OCR proposes medicines and doses; the user confirms. Images never leave the device.</li>
+    <li><strong>Screen deterministically.</strong> A 52-drug, 77-rule demo knowledge base covers CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia, and GI chelation.</li>
+    <li><strong>Fail closed.</strong> Medicines outside the knowledge base are marked <strong>UNVERIFIED</strong>; the app refuses to call the regimen safe and shows coverage explicitly.</li>
+    <li><strong>Resolve timing with a real solver.</strong> A backtracking constraint search enforces fasting windows, meals, bedtime, BID intervals, and 3–4 hour chelation spacing. Unresolved conflicts are reported.</li>
+    <li><strong>Hand off.</strong> One-click SBAR draft for pharmacist review, plain-language patient advice, and a <code>.ics</code> calendar export with dose alarms.</li>
+  </ol>
+
+  <h2>Architecture</h2>
+  <div class="arch">Label photo → browser OCR → human confirmation → /api/audit
+                                                    │
+                 deterministic interaction engine (aliases, rule graph, coverage, risk index)
+                                                    │
+                 /api/reschedule → backtracking constraint solver
+                                                    │
+                 daily timeline · weekly/PRN · unresolved report · .ics
+                                                    │
+                 /api/sbar → pharmacist-review SBAR draft</div>
+  <p><strong>Design principle:</strong> AI for perception, deterministic rules for safety, deterministic search for scheduling. No generative model makes a clinical call.</p>
+
+  <div class="stats">
+    <div class="stat"><strong>52</strong><span>medicines</span></div>
+    <div class="stat"><strong>77</strong><span>curated rules</span></div>
+    <div class="stat"><strong>35/35</strong><span>tests passing</span></div>
+    <div class="stat"><strong>0</strong><span>Python dependencies</span></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h2>Verification</h2>
+      <ul>
+        <li><span class="ok">35/35 tests pass</span> with <code>python3 -m unittest discover tests -v</code>.</li>
+        <li>20+ high-yield interaction pairs, alias regressions, unknown-drug fail-safe behavior, SBAR structure.</li>
+        <li>Chelation spacing, fasting/meal/bedtime placement, weekly/PRN handling, determinism, day-window bounds.</li>
+        <li>Engineering verification on a curated demo set — <strong>not</strong> a clinical validation study.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Impact &amp; feasibility</h2>
+      <ul>
+        <li><strong>Patient:</strong> a safe daily schedule and plain-language explanation, exported to their calendar.</li>
+        <li><strong>Caregiver:</strong> the whole regimen and the exact questions to ask.</li>
+        <li><strong>Clinician:</strong> a structured SBAR draft with verified interactions, unverified medicines, and monitoring recommendations.</li>
+        <li><strong>Deployable:</strong> no database, accounts, or stored patient data; OCR runs in the browser.</li>
+      </ul>
     </div>
   </div>
 
-  <div class="grid">
-    
-    <!-- Problem -->
-    <div class="card">
-      <h2>1. The Clinical Problem & Gap</h2>
-      <p><strong>1.3M+ Emergency Room Visits:</strong> Adverse Drug Events (ADEs) represent a leading cause of preventable hospitalizations, heavily concentrated in polypharmacy patients taking 5+ daily prescriptions across disconnected providers.</p>
-      <ul>
-        <li><strong>Pharmacokinetic Blindspots:</strong> Dangerous drug-drug interactions (e.g., CYP3A4 inhibition) and food-drug chelation (e.g., calcium blocking antibiotics) are buried in fine-print leaflets.</li>
-        <li><strong>Lack of Actionable Triage:</strong> Existing tools provide raw warnings without rescheduling conflicted doses or giving doctors structured escalation summaries.</li>
-      </ul>
-    </div>
+  <h2>Representative interactions caught</h2>
+  <table>
+    <tr><th>Pair</th><th>Mechanism</th><th>Response</th></tr>
+    <tr><td>Warfarin + Ibuprofen</td><td>Synergistic bleeding and GI mucosal injury</td><td>Critical alert; avoid combination</td></tr>
+    <tr><td>Simvastatin + Clarithromycin</td><td>CYP3A4 inhibition → rhabdomyolysis risk</td><td>Critical alert; hold statin</td></tr>
+    <tr><td>Ciprofloxacin + Calcium</td><td>Polyvalent cation chelation → malabsorption</td><td>≥3h spacing in the schedule</td></tr>
+    <tr><td>Levothyroxine + Iron</td><td>Intestinal chelation → hypothyroidism</td><td>≥4h spacing; fasting levothyroxine</td></tr>
+    <tr><td>Sertraline + Tramadol</td><td>Serotonergic synergy</td><td>Critical alert; avoid combination</td></tr>
+  </table>
 
-    <!-- Solution -->
-    <div class="card">
-      <h2>2. PharmaGuard's Novel Solution</h2>
-      <p>PharmaGuard closes the last-mile clinical safety gap by pairing a deterministic pharmacology knowledge engine with an automated scheduling solver and physician communication pipeline:</p>
-      <ul>
-        <li><strong>Multi-Tier Severity Engine:</strong> Distinguishes absolute contraindications from temporal absorption conflicts with 100% verified recall.</li>
-        <li><strong>Autonomous Schedule De-confliction:</strong> Automatically computes a 24-hour administration timeline separating chelating agents by safe windows.</li>
-        <li><strong>Standardized SBAR Escalation:</strong> Auto-drafts clinician-ready memos for pharmacists and primary care physicians.</li>
-      </ul>
-    </div>
+  <div class="callout"><strong>Honest limitation:</strong> this is a curated teaching subset, not a licensed clinical database. OCR requires human confirmation. The scheduler optimizes timing, not renal/hepatic dosing or indication appropriateness. <strong>Not for real clinical use.</strong></div>
 
-    <!-- Pipeline Architecture -->
-    <div class="card full-width">
-      <h2>3. End-to-End System Architecture & Workflow</h2>
-      <div class="flow-steps">
-        <div class="step">
-          <strong>Step 1: Intake</strong>
-          Multimodal vision/text parsing of prescription labels & OTC supplements.
-        </div>
-        <div class="step">
-          <strong>Step 2: Rule Engine</strong>
-          Cross-reference against RxNorm & FDA FAERS pharmacological interaction matrix.
-        </div>
-        <div class="step">
-          <strong>Step 3: Temporal Solver</strong>
-          Calculates pharmacokinetic spacing windows to eliminate chelation clashes.
-        </div>
-        <div class="step">
-          <strong>Step 4: Clinical SBAR</strong>
-          Generates formatted Situation, Background, Assessment, Recommendation note.
-        </div>
-        <div class="step">
-          <strong>Step 5: Patient Care Card</strong>
-          Plain-English 5th-grade reading level daily schedule & audio alerts.
-        </div>
-      </div>
-    </div>
-
-    <!-- Landmark Interactions Table -->
-    <div class="card full-width">
-      <h2>4. Clinical Verification Matrix (Test Suite Gold Standard)</h2>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Drug Pair / Regimen</th>
-              <th>Mechanism of Interaction</th>
-              <th>Clinical Severity</th>
-              <th>PharmaGuard Resolution</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Warfarin + Ibuprofen</strong></td>
-              <td>Synergistic GI mucosal bleeding & platelet inhibition</td>
-              <td><span class="badge-danger">CRITICAL</span></td>
-              <td>Flagged contraindication; generates doctor SBAR to replace with acetaminophen.</td>
-            </tr>
-            <tr>
-              <td><strong>Simvastatin + Clarithromycin</strong></td>
-              <td>Potent CYP3A4 inhibition &rarr; 10x simvastatin serum spike</td>
-              <td><span class="badge-danger">CRITICAL</span></td>
-              <td>Immediate rhabdomyolysis alert; prompts statin holiday during antibiotic course.</td>
-            </tr>
-            <tr>
-              <td><strong>Ciprofloxacin + Calcium</strong></td>
-              <td>Polyvalent cation chelation &rarr; 80% absorption loss</td>
-              <td><span class="badge-danger" style="background:#fef3c7;color:#92400e;">MODERATE / TIMING</span></td>
-              <td>Autonomous 3-hour temporal spacing window in daily schedule.</td>
-            </tr>
-            <tr>
-              <td><strong>Lisinopril + Spironolactone</strong></td>
-              <td>Dual additive potassium retention</td>
-              <td><span class="badge-danger" style="background:#fef3c7;color:#92400e;">MODERATE / LAB</span></td>
-              <td>Hyperkalemia monitoring alert; schedule baseline serum potassium/Cr check.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Tech Stack & Impact -->
-    <div class="card">
-      <h2>5. Technical Depth & Performance</h2>
-      <ul>
-        <li><strong>Zero Cloud Bloat:</strong> Lightweight Python 3 REST backend + modern CSS/JS SPA frontend.</li>
-        <li><strong>Latency:</strong> Sub-50ms audit turnaround; operates 100% offline for rural or field clinics.</li>
-        <li><strong>Verification:</strong> 12 automated unit tests across landmark pharmacological edge cases.</li>
-      </ul>
-    </div>
-
-    <!-- Feasibility & Next Steps -->
-    <div class="card">
-      <h2>6. Real-World Feasibility & Impact</h2>
-      <ul>
-        <li><strong>Immediate Adoption:</strong> Zero install friction; runs in any browser on phone, tablet, or PC.</li>
-        <li><strong>Clinician Alignment:</strong> SBAR memos integrate directly into existing EHR messaging workflows.</li>
-        <li><strong>Scalability:</strong> Designed for easy integration with open FHIR and RxNorm databases.</li>
-      </ul>
-    </div>
-
-  </div>
+  <h2>Why it can win</h2>
+  <p>A complete, working loop with a defensible safety architecture: <strong>multimodal intake → deterministic interaction detection → real constraint-based resolution → patient and clinician artifacts.</strong> Every claim in the submission is reproducible from the repository, and the app is honest about what it cannot verify.</p>
 
   <div class="footer">
-    <span>Developed for DSH Hacks V2 (November 2026)</span>
-    <span>Code: github.com/shahaman098/pharmaguard-ai · Public Open-Source</span>
+    <span><strong>Stack:</strong> Python 3 (stdlib), vanilla HTML/CSS/JS, Tesseract.js, custom constraint solver · MIT License</span>
+    <span>Demo: <em>add deployed URL</em></span>
   </div>
-
+</div>
 </body>
 </html>

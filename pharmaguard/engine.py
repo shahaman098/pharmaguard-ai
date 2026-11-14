@@ -1,205 +1,413 @@
-"""Core safety audit and clinical reasoning engine for PharmaGuard AI."""
+"""Core safety audit and clinical reasoning engine for PharmaGuard AI.
 
-from typing import List, Dict, Any, Tuple
-from .interactions import DRUG_REGISTRY, INTERACTION_RULES
+The engine deliberately uses a deterministic rule layer rather than a generative
+model for safety-critical decisions. Unknown medications fail closed: they are
+surfaced as UNVERIFIED instead of being silently treated as safe.
+"""
+
+from __future__ import annotations
+
+import re
+from datetime import datetime, timezone
+from itertools import combinations
+from typing import Any, Dict, List, Optional, Tuple
+
+from .interactions import (
+    DISCLAIMER,
+    DRUG_REGISTRY,
+    DUPLICATE_CLASS_RULES,
+    INTERACTION_RULES,
+    KNOWLEDGE_BASE_META,
+)
+
+# Words that add no drug-identification value when users paste label text.
+_NOISE_WORDS = {
+    "take", "takes", "taking", "daily", "tablet", "tablets", "tab", "tabs",
+    "capsule", "capsules", "cap", "caps", "prescription", "rx", "medication",
+    "medicine", "the", "a", "an", "and", "with", "for", "of", "one", "two",
+    "each", "morning", "evening", "night", "bedtime", "as", "needed", "by",
+    "mouth", "orally", "oral", "mg", "mcg", "g", "ml", "units", "unit", "iu",
+    "meq", "percent", "extended", "release", "er", "xr", "sr", "dr", "hcl",
+    "hydrochloride", "sodium", "potassium", "calcium", "salt", "generic",
+    "brand", "name", "patient", "directions", "refills", "remaining", "qty",
+    "quantity", "date", "filled", "discard", "after", "before", "food",
+    "meal", "meals", "water", "swallow", "whole", "do", "not", "crush",
+}
+
+_DOSE_PATTERN = re.compile(
+    r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|units?|iu|meq|%|tablets?|tabs?|capsules?|caps?)\b",
+    re.IGNORECASE,
+)
+
+
+def _normalize_text(value: str) -> str:
+    """Lowercase, strip punctuation, and collapse whitespace."""
+    text = value.lower().replace("&", " and ")
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _alias_variants(value: str) -> List[str]:
+    """Expands brand strings such as 'Coumadin / Jantoven' or names with parentheses."""
+    variants: List[str] = []
+    for part in re.split(r"[/]", value):
+        part = part.strip()
+        if not part:
+            continue
+        variants.append(part)
+        # Add the text inside parentheses as a separate alias, e.g. "(Iron)".
+        for inner in re.findall(r"\(([^)]+)\)", part):
+            variants.append(inner)
+        # Add the text outside parentheses, e.g. "Ferrous Sulfate (Iron)".
+        outside = re.sub(r"\([^)]*\)", " ", part).strip()
+        if outside:
+            variants.append(outside)
+    return variants
 
 
 class ClinicalSafetyEngine:
-    """Evaluates a multi-drug regimen against clinical interaction rules,
-    computes an aggregate risk index, and generates clinician/patient artifacts.
+    """Evaluates a multi-drug regimen against curated interaction rules,
+    computes a transparent risk index, and generates clinician/patient artifacts.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.rules = INTERACTION_RULES
         self.registry = DRUG_REGISTRY
+        self.duplicate_rules = DUPLICATE_CLASS_RULES
+        self.meta = KNOWLEDGE_BASE_META
 
-    def normalize_drug_name(self, raw_name: str) -> str:
-        """Converts user input or brand name to canonical registry key."""
-        clean = raw_name.strip().lower().replace(" ", "_").replace("-", "_")
-        if clean in self.registry:
-            return clean
+        self._alias_index: Dict[str, str] = {}
         for key, data in self.registry.items():
-            if clean in key or key in clean:
-                return key
-            if clean in data["name"].lower() or clean in data["brand"].lower():
-                return key
-        return clean
+            candidates = [data["name"], data["brand"], *data.get("aliases", [])]
+            for candidate in candidates:
+                for variant in _alias_variants(candidate):
+                    normalized = _normalize_text(variant)
+                    if normalized and normalized not in self._alias_index:
+                        self._alias_index[normalized] = key
 
+        self._pair_index: Dict[frozenset, Dict[str, Any]] = {
+            frozenset(rule["pair"]): rule for rule in self.rules
+        }
+
+    # ------------------------------------------------------------------
+    # Name resolution
+    # ------------------------------------------------------------------
+    def normalize_drug_name(self, raw_name: str) -> Optional[str]:
+        """Resolve a free-text drug string to a canonical registry key.
+
+        Matching is exact at the string level, then token-aware. We never use
+        substring matching, which previously made "iron" resolve to
+        "spironolactone".
+        """
+        if not isinstance(raw_name, str):
+            return None
+
+        text = _normalize_text(raw_name)
+        if not text:
+            return None
+
+        if text in self._alias_index:
+            return self._alias_index[text]
+
+        text = _DOSE_PATTERN.sub(" ", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        if text in self._alias_index:
+            return self._alias_index[text]
+
+        tokens = [token for token in text.split() if token not in _NOISE_WORDS]
+        if not tokens:
+            return None
+
+        cleaned = " ".join(tokens)
+        if cleaned in self._alias_index:
+            return self._alias_index[cleaned]
+
+        # Longest contiguous alias wins. Token matching prevents "iron" from
+        # matching inside "spironolactone".
+        best: Optional[Tuple[int, str]] = None
+        for alias, key in self._alias_index.items():
+            alias_tokens = alias.split()
+            if not alias_tokens:
+                continue
+            width = len(alias_tokens)
+            for index in range(len(tokens) - width + 1):
+                if tokens[index:index + width] == alias_tokens:
+                    if best is None or width > best[0]:
+                        best = (width, key)
+                    break
+        return best[1] if best else None
+
+    # ------------------------------------------------------------------
+    # Audit
+    # ------------------------------------------------------------------
     def audit_regimen(self, drug_list: List[str]) -> Dict[str, Any]:
-        """Performs a comprehensive safety audit over a list of active medications."""
-        normalized_keys = []
-        unknown_drugs = []
+        """Run a comprehensive safety audit over a list of medication names."""
+        if not isinstance(drug_list, list):
+            drug_list = []
+        drug_list = [str(item) for item in drug_list if str(item).strip()][:50]
 
-        for d in drug_list:
-            norm = self.normalize_drug_name(d)
-            if norm in self.registry:
-                if norm not in normalized_keys:
-                    normalized_keys.append(norm)
+        normalized_keys: List[str] = []
+        unknown_drugs: List[str] = []
+        duplicates: List[str] = []
+
+        for raw in drug_list:
+            norm = self.normalize_drug_name(raw)
+            if norm is None:
+                if raw.strip() not in unknown_drugs:
+                    unknown_drugs.append(raw.strip())
+            elif norm in normalized_keys:
+                if raw.strip() not in duplicates:
+                    duplicates.append(raw.strip())
             else:
-                unknown_drugs.append(d)
+                normalized_keys.append(norm)
 
-        detected_interactions = []
-        critical_count = 0
-        moderate_count = 0
+        interactions: List[Dict[str, Any]] = []
 
-        # Pairwise graph traversal
-        for i in range(len(normalized_keys)):
-            for j in range(i + 1, len(normalized_keys)):
-                d1, d2 = normalized_keys[i], normalized_keys[j]
-                match = self._find_interaction(d1, d2)
-                if match:
-                    detected_interactions.append(match)
-                    if match["severity"] == "CRITICAL":
-                        critical_count += 1
-                    elif match["severity"] == "MODERATE":
-                        moderate_count += 1
+        # Pairwise graph traversal.
+        for first, second in combinations(normalized_keys, 2):
+            match = self._find_interaction(first, second)
+            if match:
+                interactions.append(match)
 
-        # Calculate Clinical Safety Index (0 to 100)
-        # 100 = flawless, <60 = high risk, <40 = critical danger
+        # Therapeutic duplication checks (only pairs not already covered).
+        for rule in self.duplicate_rules:
+            present = [key for key in rule["keys"] if key in normalized_keys]
+            for first, second in combinations(present, 2):
+                if frozenset((first, second)) in self._pair_index:
+                    continue
+                interactions.append(self._build_interaction(rule, first, second))
+
+        interactions.sort(
+            key=lambda item: (
+                0 if item["severity"] == "CRITICAL" else 1,
+                item["title"],
+            )
+        )
+
+        critical_count = sum(1 for item in interactions if item["severity"] == "CRITICAL")
+        moderate_count = sum(1 for item in interactions if item["severity"] == "MODERATE")
+
         penalty = (critical_count * 35) + (moderate_count * 12)
         safety_score = max(5, 100 - penalty)
+        if unknown_drugs:
+            # Never present a regimen with unchecked medicines as fully safe.
+            safety_score = min(safety_score, max(40, 80 - (5 * len(unknown_drugs))))
 
         if critical_count > 0:
-            overall_status = "CRITICAL RISK — PHYSICIAN CONSULTATION REQUIRED"
+            overall_status = "CRITICAL RISK — PHARMACIST REVIEW REQUIRED"
             status_color = "red"
         elif moderate_count > 0:
-            overall_status = "MODERATE RISK — TEMPORAL ADJUSTMENT REQUIRED"
+            overall_status = "MODERATE RISK — TIMING OR MONITORING REVIEW REQUIRED"
             status_color = "amber"
-        else:
-            overall_status = "SAFE — NO KNOWN MAJOR INTERACTIONS"
+        elif unknown_drugs:
+            overall_status = "INCOMPLETE — UNVERIFIED MEDICATIONS"
+            status_color = "slate"
+        elif normalized_keys:
+            overall_status = "SAFE — NO KNOWN INTERACTIONS IN DEMO KB"
             status_color = "green"
+        else:
+            overall_status = "NO MEDICATIONS TO REVIEW"
+            status_color = "slate"
 
-        # Detailed regimen info
+        total_medications = len(normalized_keys) + len(unknown_drugs)
+        coverage_pct = (
+            round((len(normalized_keys) / total_medications) * 100)
+            if total_medications
+            else 100
+        )
+
         regimen_details = [
             {
-                "key": k,
-                "name": self.registry[k]["name"],
-                "brand": self.registry[k]["brand"],
-                "class": self.registry[k]["class"],
-                "default_dose": self.registry[k]["default_dose"],
-                "default_time": self.registry[k]["default_time"],
-                "food_warnings": self.registry[k]["food_warnings"]
+                "key": key,
+                "name": self.registry[key]["name"],
+                "brand": self.registry[key]["brand"],
+                "class": self.registry[key]["class"],
+                "default_dose": self.registry[key]["default_dose"],
+                "default_time": self.registry[key]["default_time"],
+                "food_warnings": self.registry[key]["food_warnings"],
+                "schedule": self.registry[key]["schedule"],
             }
-            for k in normalized_keys
+            for key in normalized_keys
         ]
 
-        # Plain language patient guidance summary
-        patient_summary = self._generate_patient_summary(detected_interactions)
-
         return {
-            "total_medications": len(normalized_keys),
+            "total_medications": total_medications,
+            "verified_count": len(normalized_keys),
+            "unverified_count": len(unknown_drugs),
+            "coverage_pct": coverage_pct,
             "safety_score": safety_score,
             "overall_status": overall_status,
             "status_color": status_color,
             "critical_count": critical_count,
             "moderate_count": moderate_count,
             "regimen": regimen_details,
-            "interactions": detected_interactions,
+            "interactions": interactions,
             "unknown_drugs": unknown_drugs,
-            "patient_summary": patient_summary
+            "duplicates_removed": duplicates,
+            "patient_summary": self._generate_patient_summary(interactions, unknown_drugs),
+            "knowledge_base": self.meta,
+            "disclaimer": DISCLAIMER,
         }
 
-    def _find_interaction(self, d1: str, d2: str) -> Dict[str, Any]:
-        """Checks if an interaction rule exists for the pair."""
-        pair_set = {d1, d2}
-        for rule in self.rules:
-            if set(rule["pair"]) == pair_set:
-                r1_name = self.registry[d1]["name"]
-                r2_name = self.registry[d2]["name"]
-                return {
-                    "drug_a": r1_name,
-                    "drug_b": r2_name,
-                    "pair_keys": (d1, d2),
-                    "severity": rule["severity"],
-                    "title": rule["title"],
-                    "mechanism": rule["mechanism"],
-                    "clinical_action": rule["clinical_action"],
-                    "category": rule["category"],
-                    "spacing_resolvable": rule.get("spacing_resolvable", False),
-                    "recommended_spacing_hours": rule.get("recommended_spacing_hours", 0)
-                }
-        return None
+    def _find_interaction(self, first: str, second: str) -> Optional[Dict[str, Any]]:
+        rule = self._pair_index.get(frozenset((first, second)))
+        if not rule:
+            return None
+        return self._build_interaction(rule, first, second)
 
-    def _generate_patient_summary(self, interactions: List[Dict[str, Any]]) -> List[str]:
-        """Generates plain-language 5th-grade reading level advice."""
-        advice = []
+    def _build_interaction(
+        self, rule: Dict[str, Any], first: str, second: str
+    ) -> Dict[str, Any]:
+        pair = rule.get("pair") or rule.get("keys") or (first, second)
+        return {
+            "rule_id": f"{pair[0]}+{pair[1]}",
+            "drug_a": self.registry[first]["name"],
+            "drug_b": self.registry[second]["name"],
+            "pair_keys": (first, second),
+            "severity": rule["severity"],
+            "title": rule["title"],
+            "mechanism": rule["mechanism"],
+            "clinical_action": rule["clinical_action"],
+            "category": rule["category"],
+            "spacing_resolvable": rule.get("spacing_resolvable", False),
+            "recommended_spacing_hours": rule.get("recommended_spacing_hours", 0),
+            "source": rule.get("source", "FDA-approved labeling"),
+        }
+
+    # ------------------------------------------------------------------
+    # Patient-facing copy
+    # ------------------------------------------------------------------
+    def _generate_patient_summary(
+        self, interactions: List[Dict[str, Any]], unknown_drugs: List[str]
+    ) -> List[str]:
+        advice: List[str] = []
+
         for item in interactions:
-            d_a = item["drug_a"]
-            d_b = item["drug_b"]
+            drug_a = item["drug_a"]
+            drug_b = item["drug_b"]
+
             if item["severity"] == "CRITICAL":
-                if "Bleeding" in item["title"]:
-                    advice.append(
-                        f"🚨 DANGER: Do not take {d_a} with {d_b}. Taking both together greatly increases your chance of severe internal stomach bleeding. Ask your doctor for a safer painkiller like acetaminophen."
-                    )
-                elif "Rhabdomyolysis" in item["title"]:
-                    advice.append(
-                        f"🚨 DANGER: {d_b} causes your body to absorb dangerously high levels of {d_a}, which can destroy muscle tissue and damage your kidneys. Call your doctor immediately to pause {d_a} while on this antibiotic."
-                    )
-                else:
-                    advice.append(
-                        f"🚨 DANGER: Serious conflict between {d_a} and {d_b}. Contact your prescribing doctor or pharmacist before taking both."
-                    )
-            elif item["severity"] == "MODERATE":
-                if item["spacing_resolvable"]:
-                    hrs = item["recommended_spacing_hours"]
-                    advice.append(
-                        f"⚠️ TIMING ALERT: {d_b} stops your body from absorbing {d_a}. Space them at least {hrs} hours apart so your medicine works properly."
-                    )
-                else:
-                    advice.append(
-                        f"⚠️ CAUTION: {d_a} and {d_b} both affect your body's salt/potassium levels. Your doctor needs to check your blood tests regularly."
-                    )
+                advice.append(
+                    f"🚨 DANGER: Do not take {drug_a} and {drug_b} together without "
+                    f"talking to your doctor or pharmacist. {item['title']}. "
+                    f"{item['clinical_action']}"
+                )
+            elif item["spacing_resolvable"]:
+                hours = item["recommended_spacing_hours"]
+                advice.append(
+                    f"⚠️ TIMING: Take {drug_a} and {drug_b} at least {hours:g} hours "
+                    f"apart. Taking them too close together can stop one medicine from "
+                    f"working properly."
+                )
+            else:
+                advice.append(
+                    f"⚠️ CAUTION: {drug_a} and {drug_b} need extra care. "
+                    f"{item['title']}. Ask your pharmacist what to watch for."
+                )
+
+        for drug in unknown_drugs:
+            advice.append(
+                f"❓ UNVERIFIED: We could not check “{drug}” against our demo "
+                f"knowledge base. Do not assume it is safe. Show this list to a "
+                f"pharmacist and ask about interactions."
+            )
+
         if not advice:
-            advice.append("✅ No major conflicts detected between your listed medications. Continue taking them as prescribed.")
+            advice.append(
+                "✅ No known interactions were found in this demo knowledge base. "
+                "This does not replace a review by your pharmacist or doctor."
+            )
         return advice
 
-    def generate_sbar_note(self, audit_result: Dict[str, Any], patient_name: str = "Patient Jane Doe", age: int = 74) -> str:
-        """Generates a standardized clinical SBAR memo for a pharmacist or physician."""
+    # ------------------------------------------------------------------
+    # Clinician artifact
+    # ------------------------------------------------------------------
+    def generate_sbar_note(
+        self,
+        audit_result: Dict[str, Any],
+        patient_name: str = "Patient Jane Doe",
+        age: int = 74,
+    ) -> str:
+        """Generate a structured SBAR draft for pharmacist/physician review."""
         interactions = audit_result.get("interactions", [])
-        med_names = [m["name"] + f" ({m['default_dose']})" for m in audit_result.get("regimen", [])]
+        regimen = audit_result.get("regimen", [])
+        unknown = audit_result.get("unknown_drugs", [])
+        med_names = [f"{m['name']} ({m['default_dose']})" for m in regimen]
+
+        critical = [i for i in interactions if i["severity"] == "CRITICAL"]
+        moderate = [i for i in interactions if i["severity"] == "MODERATE"]
 
         critical_lines = [
-            f"- {i['drug_a']} + {i['drug_b']}: {i['title']} ({i['mechanism']})"
-            for i in interactions if i["severity"] == "CRITICAL"
+            f"- {i['drug_a']} + {i['drug_b']}: {i['title']} — {i['mechanism']}"
+            for i in critical
         ]
         moderate_lines = [
-            f"- {i['drug_a']} + {i['drug_b']}: {i['title']}"
-            for i in interactions if i["severity"] == "MODERATE"
+            f"- {i['drug_a']} + {i['drug_b']}: {i['title']} — {i['clinical_action']}"
+            for i in moderate
         ]
 
-        actions = [i["clinical_action"] for i in interactions if i["severity"] == "CRITICAL"]
-        if not actions:
-            actions = ["Continue current regimen with temporal dose spacing where indicated."]
+        recommendations: List[str] = []
+        for item in critical:
+            recommendations.append(f"Resolve {item['drug_a']} + {item['drug_b']}: {item['clinical_action']}")
+        for item in moderate:
+            if item["spacing_resolvable"]:
+                recommendations.append(
+                    f"Separate {item['drug_a']} and {item['drug_b']} by at least "
+                    f"{item['recommended_spacing_hours']:g} hours."
+                )
+            else:
+                recommendations.append(
+                    f"Review {item['drug_a']} + {item['drug_b']} and arrange the recommended monitoring."
+                )
+        for drug in unknown:
+            recommendations.append(
+                f"Verify “{drug}” — not present in the demo knowledge base; screen it with a "
+                f"validated interaction database before administration."
+            )
+        recommendations.append(
+            "Pharmacist to confirm the final regimen, renal/hepatic dosing, and monitoring plan."
+        )
 
-        sbar = f"""CLINICAL PHARMACY ESCALATION MEMO (SBAR FORMAT)
+        generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+        return f"""CLINICAL PHARMACY REVIEW DRAFT (SBAR)
 ======================================================
-DATE/TIME: Automated Pharmacovigilance Report
+DATE/TIME: {generated}
 PATIENT:   {patient_name} (Age: {age})
-SETTING:   Community Ambulatory / Polypharmacy Review
+SETTING:   Community ambulatory / polypharmacy review
+STATUS:    Decision-support draft — requires pharmacist verification
 
 [S] SITUATION
 -------------
-Automated safety screening detected {len(critical_lines)} critical contraindication(s) and {len(moderate_lines)} absorption/monitoring conflict(s) in the patient's current multi-prescriber regimen. Overall Safety Index: {audit_result['safety_score']}/100.
+Automated screening found {len(critical)} critical interaction(s), {len(moderate)}
+monitoring/timing issue(s), and {len(unknown)} unverified medication(s).
+Safety index: {audit_result.get('safety_score', 'n/a')}/100. Knowledge-base coverage:
+{audit_result.get('coverage_pct', 'n/a')}%.
 
 [B] BACKGROUND
 --------------
-Patient active medication list ({len(med_names)} agents):
-{', '.join(med_names)}
+Active medication list ({len(med_names)} verified agents):
+{', '.join(med_names) if med_names else 'None verified.'}
+
+Unverified agents:
+{', '.join(unknown) if unknown else 'None.'}
 
 [A] ASSESSMENT
 --------------
-Critical Contraindications Identified:
-{chr(10).join(critical_lines) if critical_lines else 'None.'}
+Critical interactions:
+{chr(10).join(critical_lines) if critical_lines else 'None detected in the demo knowledge base.'}
 
-Temporal & Absorption Interactions:
-{chr(10).join(moderate_lines) if moderate_lines else 'None.'}
+Timing / monitoring issues:
+{chr(10).join(moderate_lines) if moderate_lines else 'None detected in the demo knowledge base.'}
 
 [R] RECOMMENDATION
 ------------------
-{chr(10).join(['1. ' + a for a in actions])}
-2. Instruct patient on 3-to-4 hour temporal separation for chelating minerals/antacids.
-3. Review patient renal function panel and complete medication reconciliation.
+{chr(10).join(f'{index}. {text}' for index, text in enumerate(recommendations, 1))}
 
-Transmitted via PharmaGuard AI Clinical Decision Support Engine.
+DISCLAIMER
+----------
+{DISCLAIMER}
+
+Generated by PharmaGuard AI. This draft is not a prescription or a substitute for
+professional clinical judgment.
 """
-        return sbar

@@ -1,104 +1,135 @@
 # PharmaGuard AI — Submission Kit (DSH Hacks V2)
 
-**Final Submission Lock:** Sunday 15 Nov, 07:45 UTC (11:45 PM PST)
-**Devpost Portal:** https://dsh-hacks-v2.devpost.com
+**Submission lock:** Nov 14, 2026 · 11:45 PM PST (Nov 15 · 07:45 UTC)
+**Devpost:** https://dsh-hacks-v2.devpost.com
+**Repo:** https://github.com/shahaman098/pharmaguard-ai
 
 ---
 
-## 0. Sequence of Execution (Strict Order)
+## 0. Status
 
-Follow these steps in order to guarantee a flawless submission with zero last-minute panic:
-
-```
-[Step 1: Test & Verify App] ──> [Step 2: Generate One-Page PDF] ──> [Step 3: Record Demo Video]
-                                                                             │
-[Step 6: Submit & Incognito QA] <── [Step 5: Fill Devpost Form] <── [Step 4: Push GitHub & Zip]
-```
+| Deliverable | Status |
+|---|---|
+| Working prototype | ✅ Complete: OCR intake, audit, interaction map, solver, calendar, SBAR |
+| Public GitHub repo | ✅ Live at the URL above |
+| Tests | ✅ 35/35 passing |
+| One-page PDF | ⏳ Print `ONE-PAGE-SUMMARY.html` to PDF |
+| Demo video | ⏳ Record from `DEMO-SCRIPT.md` (2:30 target) |
+| Live demo URL | ⏳ Deploy with `render.yaml` / `Procfile`, then add the URL |
+| Devpost submission | ⏳ Paste from `DEVPOST-COPY.md` |
 
 ---
 
-## Step 1: Verify the Local Application & Run Test Suite
-Open terminal in `/Users/krishshah/Hackathons/DSH Hacks V2`:
+## 1. Verify the app locally
+
 ```bash
-# 1. Run unit test suite:
-python3 -m unittest discover tests
+cd "/Users/krishshah/Hackathons/DSH Hacks V2"
 
-# 2. Launch the local web application:
+# 1. Tests
+python3 -m unittest discover tests -v
+
+# 2. Server
 python3 server.py --port 8080
 
-# 3. Open in browser:
-http://localhost:8080
+# 3. Open
+open http://localhost:8080
 ```
-Verify:
-- Presets load with one click.
-- "Run Safety Audit" displays red/amber interaction cards.
-- "De-conflict Schedule" renders the 24-hour visual schedule.
-- "Export Clinical SBAR Memo" copies to clipboard cleanly.
+
+Smoke test:
+
+- [ ] **Cardiac polypharmacy** shows **2 Critical** and **3 Timing / monitoring**, score 5/100.
+- [ ] **Alerts & interaction map** shows both critical cards and the SVG map.
+- [ ] **24-hour schedule** shows fasting levothyroxine, spaced calcium, bedtime simvastatin.
+- [ ] **Why this schedule** lists the spacing decisions and solver status.
+- [ ] **Add to calendar** downloads `pharmaguard-schedule.ics`.
+- [ ] **Export SBAR** opens a draft with all four sections and the disclaimer.
+- [ ] **Unverified medicine** preset shows `INCOMPLETE — UNVERIFIED MEDICATIONS`, 75/100, 67% verified.
+- [ ] **Scan prescription label → Try a sample label** detects five medicines and doses. (First run may take 10–20s while OCR loads.)
+- [ ] **Re-optimize** re-runs the solver and shows a toast.
+- [ ] No console errors in DevTools.
 
 ---
 
-## Step 2: Generate the One-Page Project PDF
-The hackathon officially requires a **One-Page Project Description PDF**.
-We have generated `ONE-PAGE-SUMMARY.html` formatted with print CSS specifically calibrated to a single A4/Letter page.
+## 2. Generate the one-page PDF
 
-1. Open `ONE-PAGE-SUMMARY.html` in Chrome / Safari / Edge:
-   ```bash
-   open ONE-PAGE-SUMMARY.html
-   ```
-2. Press `Cmd + P` (Print).
-3. Set destination: **Save as PDF**.
-4. Check margins: **Default** or **Minimum**; enable **Background graphics**.
+1. Open `ONE-PAGE-SUMMARY.html` in Chrome/Safari/Edge.
+2. `Cmd + P` → **Save as PDF**.
+3. Paper: **Letter**; margins: **Default**; enable **Background graphics**.
+4. Confirm it is exactly **one page**.
 5. Save as `PharmaGuard-AI-One-Page-Summary.pdf`.
 
 ---
 
-## Step 3: Record the Demo Video (Target 2:15 – 2:45)
-1. Use Loom, QuickTime Screen Recording, or OBS.
-2. Follow the exact timed cues in `DEMO-SCRIPT.md`.
-3. Check video length with our zero-dependency verification tool:
-   ```bash
-   python3 check_video.py path/to/your-demo.mp4
-   ```
-   *Confirm it prints: `PASS (inside 2:00-3:00)`.*
-4. Upload to YouTube as **Unlisted** (or Public). Title it: `PharmaGuard AI — DSH Hacks V2 Demo`.
+## 3. Record the demo video
+
+Follow `DEMO-SCRIPT.md`.
+
+- [ ] 1080p, clear audio, real cursor.
+- [ ] Show the label scan, audit, interaction map, schedule, calendar export, SBAR, and fail-safe demo.
+- [ ] Do not claim clinical validation or “100% accuracy.”
+- [ ] Duration 2:00–3:00.
+- [ ] Verify with `python3 check_video.py path/to/demo.mp4`.
+- [ ] Upload to YouTube as **Unlisted** or **Public**.
 
 ---
 
-## Step 4: Push GitHub Repository & Create Submission ZIP
-1. Initialize and push your repository to your GitHub account:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit: PharmaGuard AI complete clinical safety engine and web app"
-   # Create a public repo on GitHub named 'pharmaguard-ai' and push:
-   git remote add origin https://github.com/<YOUR_USERNAME>/pharmaguard-ai.git
-   git branch -M main
-   git push -u origin main
-   ```
-2. Create the clean project ZIP file for Devpost:
-   ```bash
-   zip -r dsh-hacks-v2-submission.zip . -x "*.git*" "*.DS_Store*" "*__pycache__*"
-   ```
+## 4. Deploy a live demo (recommended)
+
+The server already binds `0.0.0.0` and reads `$PORT`.
+
+**Render (free tier):**
+1. New → **Blueprint** → connect `shahaman098/pharmaguard-ai`.
+2. Render reads `render.yaml`.
+3. Wait for the deploy, open the URL, and verify `/api/health`.
+4. Add the URL to the README, one-pager, and Devpost form.
+
+**Any other host:** start command `python3 server.py`, environment `PORT` provided by the host. No build step and no pip install required.
+
+> The OCR library loads from a CDN. If the host blocks it, the paste-text fallback and manual entry still work.
 
 ---
 
-## Step 5: Fill the Devpost Submission Form
-1. Go to `https://dsh-hacks-v2.devpost.com` and click **"Enter a submission"**.
-2. **Project Name:** `PharmaGuard AI`
-3. **Elevator Pitch:** `Multimodal prescription safety & polypharmacy co-pilot.`
-4. **Description:** Copy the full Markdown text from `DEVPOST-COPY.md`.
-5. **Video URL:** Paste the YouTube link.
-6. **Files:** Upload `PharmaGuard-AI-One-Page-Summary.pdf` and `dsh-hacks-v2-submission.zip`.
-7. **GitHub URL:** Paste your public repository link.
-8. **Tags:** Copy from `DEVPOST-ANSWERS.md`.
-9. Click **Save & Submit**. (Note: You can continue editing your submission until the deadline lock).
+## 5. Fill the Devpost form
+
+1. **Project name:** `PharmaGuard AI`
+2. **Elevator pitch:** `Scan prescriptions. Catch dangerous interactions. Fix the schedule.`
+3. **Description:** paste `DEVPOST-COPY.md`.
+4. **Video:** paste the YouTube/Vimeo URL.
+5. **Files:** upload `PharmaGuard-AI-One-Page-Summary.pdf` and the source ZIP.
+6. **GitHub:** `https://github.com/shahaman098/pharmaguard-ai`
+7. **Tags:** from `DEVPOST-ANSWERS.md`.
+8. **Prize categories:** Main track; optionally **Best Research-Oriented Project (YRI)** and **Tin Computer Growth Plan**.
+9. Click **Save & Submit**. You can edit until the lock.
+
+Create the ZIP:
+
+```bash
+zip -r dsh-hacks-v2-submission.zip . \
+  -x "*.git*" "*.DS_Store*" "*__pycache__*" "*.mp4" "*.mov"
+```
 
 ---
 
-## Step 6: Logged-Out Incognito QA Audit
-Open an **Incognito / Private browser window** and verify:
-- [ ] Devpost submission page loads publicly without login prompt.
-- [ ] YouTube demo video plays immediately with clear audio and 1080p video.
-- [ ] GitHub repository link opens without a 404 error.
-- [ ] One-page PDF preview is readable.
-- [ ] No placeholder text (e.g. `[TODO]`, `username`) left in the submission copy.
+## 6. Logged-out QA
+
+Open an incognito window and check:
+
+- [ ] Devpost page loads without login.
+- [ ] Video plays immediately with audio.
+- [ ] GitHub repo loads without a 404 and shows the README.
+- [ ] One-page PDF is readable and one page.
+- [ ] ZIP downloads and contains `server.py`, `pharmaguard/`, `static/`, `tests/`.
+- [ ] No placeholder text like `<YOUR_USERNAME>`, `[TODO]`, or `localhost` in the submission copy.
+- [ ] Live demo URL works (if deployed).
+- [ ] Submission says “35 tests,” “52 drugs,” “77 rules,” not “100% accuracy.”
+
+---
+
+## 7. Final freeze checklist
+
+- [ ] Deadline converted to local time and an alarm set 2 hours before.
+- [ ] Repo is public and the latest commit is pushed.
+- [ ] `python3 -m unittest discover tests` passes from a clean clone.
+- [ ] Video URL is public/unlisted and playable in incognito.
+- [ ] PDF is attached and one page.
+- [ ] Submission saved **and** confirmed on the Devpost page.

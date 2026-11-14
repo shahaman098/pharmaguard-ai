@@ -1,127 +1,219 @@
 # PharmaGuard AI 🛡️💊
-> **Multimodal Prescription Safety & Polypharmacy Co-Pilot**  
-> *Built for DSH Hacks V2 (AI × Healthcare)*
 
-[![Tests](https://img.shields.io/badge/tests-12%2F12%20passing-brightgreen)](#clinical-benchmarks)
-[![Zero Cloud Bloat](https://img.shields.io/badge/dependencies-0%20external-blue)](#architecture)
+> **Scan a prescription label. Catch dangerous interactions. Get a safe 24-hour schedule and a pharmacist-ready handoff.**
+>
+> Built for **DSH Hacks V2 — AI × Healthcare**
+
+[![Tests](https://img.shields.io/badge/tests-35%2F35%20passing-brightgreen)](tests/test_safety_engine.py)
+[![Knowledge base](https://img.shields.io/badge/demo%20KB-52%20drugs%20%C2%B7%2077%20rules-blue)](#knowledge-base)
+[![Dependencies](https://img.shields.io/badge/python%20deps-zero-success)](#quick-start)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Theme: AI × Healthcare](https://img.shields.io/badge/Theme-AI%20%C3%97%20Healthcare-crimson)](#)
+
+**Live demo:** _(add your deployed URL here)_ · **Repo:** https://github.com/shahaman098/pharmaguard-ai
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/shahaman098/pharmaguard-ai)
 
 ---
 
-## 💡 The Clinical Problem
-Over **1.3 million emergency department visits** occur annually in the United States due to Adverse Drug Events (ADEs). In elderly patients managing multiple chronic conditions, **polypharmacy** (taking 5 or more daily medications) is standard. 
+## Why this exists
 
-When patients see multiple specialists, lethal drug interactions and gut absorption conflicts (such as mineral chelation of antibiotics) frequently slip through fragmented electronic records. Most existing tools only emit generic, alarming warnings without providing a **temporal schedule resolution** or a **standardized clinician escalation bridge**.
+Adverse drug events are a leading preventable cause of emergency visits, and polypharmacy — five or more medicines across multiple prescribers — is routine for older adults. The dangerous gaps are usually not exotic: warfarin plus an NSAID, a statin plus a strong CYP3A4 inhibitor, calcium binding ciprofloxacin in the gut, or levothyroxine and iron taken together.
 
----
+Most tools stop at a generic warning. PharmaGuard closes the loop:
 
-## ⚡ What PharmaGuard AI Does
-PharmaGuard AI closes this last-mile gap with an end-to-end clinical workflow:
-
-1. **Deterministic Pharmacology Engine:** Cross-checks patient regimens against a structured interaction knowledge graph (derived from FDA FAERS, RxNorm, and CYP450 metabolism data).
-2. **Multi-Tier Severity Categorization:** Distinguishes absolute contraindications (e.g. Warfarin + Ibuprofen &rarr; GI bleeding; Simvastatin + Clarithromycin &rarr; acute rhabdomyolysis) from temporal absorption conflicts.
-3. **Autonomous 24-Hour Schedule De-confliction:** An algorithmic temporal solver spaces chelating agents (e.g. Calcium Carbonate, Iron) by 3–4 hours away from antibiotics (Ciprofloxacin) and thyroid hormones (Levothyroxine) to guarantee therapeutic drug absorption.
-4. **1-Click Clinical SBAR Memo:** Auto-generates structured **Situation, Background, Assessment, Recommendation** documentation formatted for pharmacists and primary care physicians.
-5. **Plain-Language Patient Safety Cards:** Translates complex pharmacology into 5th-grade reading level advice for patients and family caregivers.
+1. **Read the regimen** from a label photo (browser OCR) or from the built-in registry.
+2. **Screen it** against a deterministic pharmacology rule base.
+3. **Resolve what can be resolved** with a constraint-based daily schedule.
+4. **Hand off** a plain-language patient guide, a calendar export, and an SBAR draft for the pharmacist.
 
 ---
 
-## 🏗️ System Architecture
+## What it does
+
+| Stage | What happens |
+|---|---|
+| **Multimodal intake** | Upload a prescription-label photo. Tesseract.js (an LSTM-based OCR engine) runs locally in the browser, then the app proposes medicines and doses for human confirmation. No image is uploaded. |
+| **Fail-safe audit** | 52-drug demo knowledge base and 77 curated rules covering CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia, and GI chelation. **Unknown drugs are marked UNVERIFIED — never “safe.”** |
+| **Constraint solver** | A deterministic backtracking scheduler enforces fasting windows, meal alignment, bedtime placement, twice-daily intervals, and 3–4 hour chelation spacing. Weekly and as-needed medicines are kept out of the daily timeline. |
+| **Clinician handoff** | Generates an SBAR draft with the verified interactions, unverified medicines, timing issues, and explicit monitoring recommendations. |
+| **Patient action** | Plain-language advice plus a one-click `.ics` export so every scheduled dose can be added to a phone calendar with alarms. |
+
+---
+
+## Architecture
 
 ```
-┌────────────────────────────────────────────────────────┐
-│              Patient / Caregiver Regimen               │
-│   (Prescription Intake / Search / Polypharmacy Presets)│
-└───────────────────────────┬────────────────────────────┘
-                            │
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│      PharmaGuard Clinical Decision Support Engine      │
-│  - Normalized RxNorm & Brand-Name Resolution           │
-│  - Pairwise Knowledge Graph Traversal                  │
-│  - Cytochrome P450 & Absorption Kinetic Rules          │
-└──────────────┬───────────────────────────┬─────────────┘
-               │                           │
-               ▼                           ▼
-┌──────────────────────────────┐  ┌──────────────────────────────┐
-│  Algorithmic Temporal Solver │  │  Clinical Escalation Bridge  │
-│  - Chelation Window Spacing  │  │  - Standardized SBAR Memo    │
-│  - 24-Hour Patient Timeline  │  │  - Grade 5 Plain-Text Advice │
-└──────────────────────────────┘  └──────────────────────────────┘
+Prescription label photo
+        │
+        ▼
+Browser OCR (Tesseract.js) ──► detected drugs + doses
+        │                         (human confirms)
+        ▼
+POST /api/audit
+        │
+        ▼
+Deterministic safety engine (Python)
+  ├── alias-aware drug resolution (brand + generic, token-safe)
+  ├── pairwise interaction graph + therapeutic duplication checks
+  ├── coverage / unverified-medication accounting
+  └── transparent 0–100 risk index
+        │
+        ├──────────────► POST /api/reschedule
+        │                  │
+        │                  ▼
+        │          Backtracking constraint solver
+        │          (fasting, meals, intervals, spacing)
+        │                  │
+        │                  ├──► daily timeline
+        │                  ├──► weekly / as-needed buckets
+        │                  ├──► unresolved-conflict report
+        │                  └──► .ics calendar export
+        │
+        └──────────────► POST /api/sbar
+                           │
+                           ▼
+                   Pharmacist-review SBAR draft
 ```
+
+The AI is deliberately split from the clinical decision layer:
+
+- **Perception (AI/OCR):** reads noisy label text.
+- **Safety (deterministic):** a rule engine makes the interaction calls, so the output is reproducible and auditable.
+- **Optimization (deterministic):** the scheduler is a real search over interval constraints, not a hardcoded per-drug table.
 
 ---
 
-## 🧪 Clinical Benchmarks & Test Suite
+## Knowledge base
 
-PharmaGuard includes an automated clinical test suite covering landmark pharmacological contraindications:
+- **52 medicines**, including generics, common US brands, and aliases.
+- **77 rules**: pairwise interactions plus therapeutic-duplication checks.
+- Curated from **FDA-approved prescribing information**, RxNorm-style naming, and standard pharmacology references.
+- Coverage includes:
+  - bleeding: warfarin + NSAIDs / aspirin
+  - CYP450: simvastatin + clarithromycin/itraconazole, warfarin + amiodarone/metronidazole/fluconazole, clopidogrel + omeprazole
+  - renal: lithium + NSAIDs/ACE inhibitors, methotrexate + NSAIDs
+  - serotonergic: SSRIs + tramadol/linezolid
+  - chelation: ciprofloxacin/levofloxacin + calcium/iron, levothyroxine + calcium/iron
+  - cardiac: sildenafil + nitrates, metoprolol + verapamil, digoxin + amiodarone
+  - metabolic: glipizide + insulin, metformin + iodinated contrast
+  - hyperkalemia: ACE inhibitors/ARBs/spironolactone + potassium
 
-| Benchmark Case | Mechanism Tested | Expected Severity | PharmaGuard Action | Status |
-|---|---|---|---|---|
-| **Warfarin + Ibuprofen** | Synergistic GI mucosal bleeding & platelet inhibition | **CRITICAL** | Contraindication alert; drafts SBAR memo | ✅ PASS |
-| **Simvastatin + Clarithromycin** | Potent CYP3A4 inhibition & acute rhabdomyolysis | **CRITICAL** | Statin holiday prompt; physician escalation | ✅ PASS |
-| **Ciprofloxacin + Calcium** | Polyvalent cation chelation & 80% absorption loss | **MODERATE / TIMING** | Shifts calcium to lunch (3h spacing) | ✅ PASS |
-| **Lisinopril + Spironolactone** | Additive potassium retention & hyperkalemia | **MODERATE / LAB** | Serum K+/Cr lab monitoring alert | ✅ PASS |
-| **Methotrexate + Aspirin** | Impaired renal tubular clearance & bone marrow toxicity | **CRITICAL** | Immediate oncology consultation alert | ✅ PASS |
-| **Sertraline + Tramadol** | Synergistic serotonergic agonism & Serotonin Syndrome | **CRITICAL** | Dual SSRI/opioid toxicity warning | ✅ PASS |
-| **Levothyroxine + Iron** | Intestinal divalent iron chelation of exogenous T4 | **MODERATE / TIMING** | Spaces iron to midday (4h separation) | ✅ PASS |
+> **This is a curated teaching subset, not a validated clinical database.** It is intentionally small enough to audit and demo. Real deployment would require a licensed interaction dataset, clinician review, and regulatory work.
 
-Run the unit tests:
+---
+
+## Quick start
+
+Requires **Python 3.9+**. No pip packages.
+
 ```bash
-python3 -m unittest discover tests -v
-```
-
----
-
-## 🚀 Quick Start (Local Run)
-
-PharmaGuard AI requires **Python 3.8+** with **zero external pip dependencies**:
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/<YOUR_USERNAME>/pharmaguard-ai.git
+git clone https://github.com/shahaman098/pharmaguard-ai.git
 cd pharmaguard-ai
 
-# 2. Run unit tests
-python3 -m unittest discover tests
+# 1. Run the test suite
+python3 -m unittest discover tests -v
 
-# 3. Start the application server
+# 2. Start the app
 python3 server.py --port 8080
 
-# 4. Open in your browser:
-# http://localhost:8080
+# 3. Open http://localhost:8080
 ```
+
+The label scanner loads Tesseract.js from a CDN. If OCR is unavailable, the scan dialog includes a paste-text fallback, and manual entry always works.
+
+### Deploy
+
+The server binds `0.0.0.0` and honors `$PORT`:
+
+```bash
+PORT=8080 python3 server.py
+```
+
+A `render.yaml` and `Procfile` are included for one-click Render/Railway-style deploys. The app has no database, no accounts, and no persistent storage.
 
 ---
 
-## 📁 Repository Structure
+## Demo cases
+
+| Preset | What it demonstrates |
+|---|---|
+| **Cardiac polypharmacy** (6 medicines) | Two critical interactions + three timing/monitoring issues, a rescheduled timeline, and a critical-conflict-aware SBAR |
+| **Serotonin risk** | SSRI + tramadol/linezolid serotonin-syndrome detection |
+| **Thyroid + minerals** | Levothyroxine/calcium/iron chelation with 4-hour spacing |
+| **Unverified medicine** | Fail-safe behavior: the app refuses to certify an unknown drug as safe |
+| **No known interactions** | A clean regimen still gets the pharmacist-review disclaimer |
+
+---
+
+## Verification
+
+```bash
+python3 -m unittest discover tests -v
+# Ran 35 tests — OK
+```
+
+The suite covers:
+
+- brand/generic/alias resolution (including the regression that `"iron"` must **not** match `"spironolactone"`)
+- 20+ high-yield interaction pairs
+- unknown-drug fail-safe behavior and coverage accounting
+- SBAR structure and unverified-medicine disclosure
+- scheduler spacing (cipro/calcium ≥ 3h, levothyroxine/iron ≥ 4h)
+- fasting, meal, bedtime, BID interval, weekly, and PRN behavior
+- deterministic output, day-window bounds, and critical-pair separation
+
+These are engineering tests, **not** a clinical validation study. See [`BENCHMARK-REPORT.md`](BENCHMARK-REPORT.md) for the honest scope and limitations.
+
+---
+
+## Repository layout
 
 ```
 .
-├── COMMAND-CENTRE.md          # Complete hackathon intelligence, strategy & rubric compliance
-├── DEVPOST-COPY.md            # Paste-ready Devpost submission text & project description
-├── DEVPOST-ANSWERS.md         # Field-by-field answers for the Devpost submission form
-├── DEMO-SCRIPT.md             # Timed 2:30 video walkthrough script with visual cues
-├── SUBMISSION-KIT.md          # Step-by-step submission checklist & QA audit protocol
-├── ONE-PAGE-SUMMARY.html      # Printable One-Page Project PDF (DSH Hacks V2 deliverable)
-├── ONE-PAGE-SUMMARY.md        # Markdown version of One-Page summary
-├── BENCHMARK-REPORT.md        # Formal clinical validation & test verification report
-├── check_video.py             # Standalone tool to verify demo video duration (2:00-3:00)
-├── server.py                  # Zero-dependency HTTP REST API & web server
-├── pharmaguard/               # Core pharmacology package
-│   ├── engine.py              # Safety scoring & clinical reasoning
-│   ├── interactions.py        # Pharmacological knowledge graph & rules
-│   └── scheduler.py           # 24-hour temporal de-confliction algorithm
-├── tests/
-│   └── test_safety_engine.py  # 12 automated unit tests across clinical edge cases
-└── static/                    # Responsive web dashboard
-    ├── index.html             # Medical-grade single-page interface
-    ├── style.css              # Custom styling & clinical color palette
-    └── app.js                 # Reactive client controller & timeline renderer
+├── server.py                   # zero-dependency HTTP server + JSON API
+├── pharmaguard/
+│   ├── engine.py               # alias resolution, audit, SBAR, patient copy
+│   ├── interactions.py         # 52-drug registry and 77 curated rules
+│   └── scheduler.py            # backtracking constraint solver
+├── static/
+│   ├── index.html              # single-page clinical UI
+│   ├── app.js                  # OCR intake, graph, timeline, .ics export
+│   ├── style.css               # responsive clinical design system
+│   └── samples/sample-label.png
+├── tests/test_safety_engine.py # 35 tests
+├── DEVPOST-COPY.md             # paste-ready submission story
+├── DEMO-SCRIPT.md              # 2:30 walkthrough script
+├── ONE-PAGE-SUMMARY.md/.html   # print-ready one-pager
+├── BENCHMARK-REPORT.md         # verification scope and limitations
+├── RESEARCH.md                 # research-oriented statement (YRI)
+└── SUBMISSION-KIT.md           # step-by-step submission checklist
 ```
 
 ---
 
-## 📄 License
-MIT License — free for educational and clinical community use.
+## API
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/health` | Liveness and KB version |
+| `GET` | `/api/meta` | KB metadata, sources, disclaimer, feature flags |
+| `GET` | `/api/drugs` | Registry with aliases and scheduling metadata |
+| `POST` | `/api/audit` | `{ "medications": ["Warfarin", "Ibuprofen"] }` |
+| `POST` | `/api/reschedule` | `{ "regimen": [...], "interactions": [...] }` |
+| `POST` | `/api/sbar` | `{ "audit_result": {...}, "patient_name": "...", "age": 74 }` |
+
+---
+
+## Limitations & safety
+
+- The knowledge base is a **curated demo subset**, not a licensed clinical database.
+- OCR can misread labels; every detection requires human confirmation.
+- The scheduler optimizes timing only. It does not calculate renal/hepatic doses, validate indications, or replace a pharmacist.
+- The app has no accounts, no database, and stores no patient data. Patient name/age stay in the browser and are only used in generated artifacts.
+- **Do not use this for real clinical decisions.**
+
+---
+
+## License
+
+MIT License. See [`LICENSE`](LICENSE).

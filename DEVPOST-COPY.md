@@ -1,91 +1,97 @@
 # Devpost Copy — Paste-Ready (DSH Hacks V2)
 
-**Event:** DSH Hacks V2 (AI × Healthcare) · Devpost Submission Form
+**Event:** DSH Hacks V2 (AI × Healthcare) · Devpost submission
+**Project:** PharmaGuard AI
+**Repo:** https://github.com/shahaman098/pharmaguard-ai
+**Live demo:** _(add your deployed URL before submitting)_
+**Video:** _(add your unlisted YouTube/Vimeo URL before submitting)_
 
 ---
 
 ## Project Name
+
 **PharmaGuard AI**
 
-## Elevator Pitch / Subtitle (60 chars max)
-Multimodal prescription safety & polypharmacy co-pilot.
+## Elevator Pitch (under 60 characters)
+
+Scan prescriptions. Catch dangerous interactions. Fix the schedule.
 
 ---
 
-## Full Markdown Description (Paste into "About the Project")
+## Full Markdown Description (paste into “About the Project”)
 
 ### 💡 Inspiration
-Over **1.3 million emergency department visits** occur in the United States every year due to Adverse Drug Events (ADEs). In elderly patients and individuals managing multiple chronic conditions, polypharmacy (taking 5 or more daily prescription drugs) is the norm rather than the exception.
 
-The underlying failure is rarely patient negligence—it is a **systemic communication and coordination gap**:
-1. Patients see multiple specialists who prescribe medications without cross-visibility into over-the-counter supplements.
-2. Drug-drug interactions (e.g., CYP3A4 enzyme inhibition, synergistic bleeding risks) and food-drug chelation (e.g., calcium binding to fluoroquinolones) are buried in tiny warning leaflets.
-3. When conflicts occur, patients don't know who to contact, and doctors lack an automated, structured escalation summary to quickly adjust regimens.
+Adverse drug events are a leading preventable cause of emergency visits, and polypharmacy is routine for older adults. A patient may see a cardiologist, a primary care doctor, and an urgent-care clinician in the same month — and no one sees the whole medication list.
 
-We built **PharmaGuard AI** to close this last-mile gap: transforming physical prescription bottles and complex regimens into an intelligent, safety-verified medication schedule and a structured clinical communication bridge.
-
----
+The dangerous gaps are often ordinary: warfarin plus an NSAID, a statin plus a strong CYP3A4 inhibitor, calcium binding ciprofloxacin in the gut, or levothyroxine and iron taken together. Most tools stop at a generic warning. We wanted to close the last mile: **detect the conflict, resolve the timing where possible, and hand the patient and clinician something actionable.**
 
 ### ⚙️ What It Does
-PharmaGuard AI is an end-to-end clinical safety co-pilot designed for patients, caregivers, and community healthcare workers:
 
-1. **Multimodal Prescription Intake:** Users can upload photo labels of prescription pill bottles or select medications from a comprehensive clinical registry. The multimodal parser extracts drug names, dosages, frequencies, and administration instructions.
-2. **Deterministic Clinical Interaction Engine:** Rather than relying solely on probabilistic generative AI for safety-critical pharmacology, PharmaGuard cross-checks against a structured pharmacological interaction matrix (derived from FDA FAERS and clinical pharmacology standards). It categorizes risks by severity:
-   - **Critical / Major:** Immediate contraindications (e.g., Warfarin + NSAIDs causing life-threatening hemorrhage; Simvastatin + Clarithromycin risking acute rhabdomyolysis).
-   - **Moderate / Absorption:** Timing and chelation conflicts (e.g., Calcium Carbonate inhibiting Ciprofloxacin absorption).
-   - **Minor / Monitoring:** Synergistic mild sedation or duplicate therapeutic class alerts.
-3. **Autonomous Schedule De-confliction:** An intelligent temporal optimization engine separates conflicting agents. If Drug A and Drug B cannot be taken together due to gut chelation, PharmaGuard automatically spaces their administration by the recommended 2-to-4 hour window and computes an optimized 24-hour visual patient timeline.
-4. **1-Click Clinical Escalation (SBAR Format):** When major contraindications are identified, PharmaGuard auto-generates a standardized SBAR (Situation, Background, Assessment, Recommendation) clinical note formatted for pharmacists and primary care physicians, empowering patients with actionable advocacy.
-5. **Plain-Language Patient Safety Card:** Translates complex pharmacological mechanisms into clear 5th-grade reading level advice with high-contrast visual status cards and multi-lingual accessibility.
+PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 
----
+1. **Read the regimen from a label photo.** The app uses Tesseract.js, an LSTM-based OCR engine, to read a prescription label in the browser, proposes medicines and doses, and asks the user to confirm. The image never leaves the browser.
+2. **Screen against a deterministic knowledge base.** 52 medicines and 77 curated rules cover CYP450 interactions, renal clearance, pharmacodynamic synergy, QT prolongation, bleeding, hyperkalemia, and GI chelation. Results are reproducible and auditable.
+3. **Fail closed, not open.** If a medicine is not in the demo knowledge base, the app marks it **UNVERIFIED** and refuses to call the regimen safe. This was a deliberate design choice: a false “safe” is worse than an honest “I don’t know.”
+4. **Resolve timing with a real constraint solver.** A deterministic backtracking scheduler enforces fasting windows, meal alignment, bedtime placement, twice-daily intervals, and 3–4 hour chelation spacing. It reports unresolved conflicts instead of pretending they were fixed.
+5. **Hand off to the care team.** One click generates a structured SBAR draft with the verified interactions, unverified medicines, timing issues, and monitoring recommendations.
+6. **Give the patient an action.** Plain-language advice and a `.ics` calendar export add every scheduled dose to a phone calendar with alarms.
 
 ### 🛠️ How We Built It
-- **Core Clinical Engine:** Developed in clean Python 3 with zero external bloat. Includes a structured pharmacological interaction matrix modeling CYP450 metabolism, pharmacokinetic interactions, and therapeutic duplications.
-- **Temporal Scheduling Algorithm:** Implements an interval de-confliction solver that calculates optimal spacing windows between chelating agents and peak plasma concentrations.
-- **Web Interface:** A sleek, medical-grade responsive Single Page Application built with modern HTML5, CSS custom properties (clinical slate, surgical blue, emerald safe, amber alert, crimson danger palette), and vanilla reactive JavaScript. No framework overhead, sub-50ms render times.
-- **RESTful API Service:** Lightweight built-in HTTP server providing REST endpoints (`/api/analyze`, `/api/drugs`, `/api/reschedule`, `/api/sbar`) enabling instant local execution or cloud deployment.
-- **Verification Harness:** Includes a rigorous automated test suite (`tests/test_safety_engine.py`) validating 100% sensitivity on clinical gold-standard adverse pairs.
 
----
+- **Perception layer:** Tesseract.js OCR runs locally in the browser. Recognized text is parsed against a token-aware alias index of generic names, US brand names, and common abbreviations.
+- **Safety layer:** a pure-Python deterministic engine. Drug resolution is exact/token-based (never substring matching), so `"iron"` can never resolve to `"spironolactone"`.
+- **Optimization layer:** a backtracking search over interval constraints. The solver checks meal/fasting rules, minimum intra-dose intervals, and interaction-driven spacing, then reports the reasons for every move.
+- **Interface:** a responsive single-page clinical UI with a regimen panel, risk score, interaction map, 24-hour timeline, patient guide, and SBAR modal. Vanilla HTML/CSS/JS — no framework overhead.
+- **API:** a zero-dependency Python HTTP server exposing `/api/audit`, `/api/reschedule`, `/api/sbar`, `/api/drugs`, and `/api/meta`.
+- **Verification:** 35 automated tests covering aliases, high-yield interactions, fail-safe behavior, SBAR structure, scheduler spacing, meal/fasting placement, weekly/PRN handling, determinism, and day-window bounds.
 
 ### 🧗 Challenges We Ran Into
-- **Pharmacokinetic vs. Pharmacodynamic Distinction:** Distinguishing between absolute contraindications (which require immediate physician discontinuation) versus temporal absorption conflicts (which can be safely resolved by spacing administration by 2–4 hours). We encoded a multi-tier severity rule hierarchy to avoid false-alarm fatigue.
-- **Safe Fallback Design:** In healthcare AI, hallucinations are unacceptable. We designed a dual-layer architecture where deterministic pharmacological rules gate and audit all AI-generated guidance before it reaches the user.
-- **User Experience for Stressed Caregivers:** Designing an interface that communicates life-critical warnings clearly without causing panic, highlighting both the immediate hazard and the exact next step.
 
----
+- **Safety-critical UX:** A risk score of “100” is misleading if the app silently ignored an unknown medicine. We redesigned the audit to expose coverage and unverified medicines, and to cap the score when the regimen is incomplete.
+- **Real scheduling, not a lookup table:** Our first scheduler was a per-drug switch statement. We replaced it with a constraint search so the schedule is derived from rules and verifiable with property tests.
+- **Noisy OCR:** Labels contain pharmacy names, directions, refill text, and dosage noise. We built a human-confirmation step rather than auto-adding medicines, because OCR errors in a safety tool are unacceptable.
+- **Clinical honesty:** We deliberately avoided claiming “100% sensitivity” from a small self-authored test set. The README, one-pager, and SBAR all state the scope and limitations.
 
-### 🏆 Accomplishments That We're Proud Of
-- Built a zero-dependency, deployable clinical safety engine that runs completely client-side or on lightweight server compute.
-- Successfully achieved **100% test pass rate** across landmark clinical interaction test cases.
-- Implemented real SBAR clinical note generation that bridges the gap between distressed patients and busy clinical pharmacists.
-- Crafted a complete, end-to-end working system—from prescription upload to visual timeline and clinician handoff—in under 16 hours.
+### 🏆 Accomplishments We’re Proud Of
 
----
+- A complete, working loop: **label photo → verified regimen → interaction map → rescheduled timeline → calendar export → SBAR draft.**
+- A genuinely fail-safe audit that surfaces unknown medicines instead of hiding them.
+- A real interval-constraint scheduler with deterministic, testable output.
+- A focused demo knowledge base (52 drugs, 77 rules) that a judge can audit in the repo.
+- 35/35 tests passing with no external Python dependencies.
 
 ### 📚 What We Learned
-- Real clinical utility comes from closing the operational loop: identifying an adverse interaction is only half the battle; giving the caregiver a rescheduled timeline and the physician a structured memo is what prevents hospitalizations.
-- Deterministic rule layers paired with natural-language explanation produce far safer and more trustworthy medical tools than black-box models alone.
 
----
+- In healthcare AI, the model is not the product. **The safety architecture is the product.** Separating perception (AI) from clinical decisions (deterministic rules) makes the system easier to explain, test, and trust.
+- The most valuable output is often the next action, not the alert: a safe time, a calendar entry, or a note the pharmacist can act on.
+- Honest limitations increase credibility. “Unverified” is a feature, not a failure.
 
-### 🚀 What's Next for PharmaGuard AI
-- Direct integration with open FHIR (Fast Healthcare Interoperability Resources) APIs to pull patient electronic health records.
-- Barcode and National Drug Code (NDC) packaging scanner for instant physical bottle verification.
-- Bi-directional SMS/WhatsApp medication adherence check-ins for elderly family members.
-- Pilot partnership with community health clinics and independent pharmacy networks.
+### 🚀 What’s Next
 
----
+- Integrate a licensed drug-interaction dataset and a clinician review workflow.
+- Add FHIR/Medication List import for real electronic health records.
+- Validate OCR across real bottle photos, lighting conditions, and label formats.
+- Add renal/hepatic dose checks and indication-specific contraindications.
+- Pilot with community pharmacies and caregiver groups.
 
 ### 🤖 AI Usage Disclosure
-We utilized AI tools (coding assistants) to assist with code scaffolding, test case synthesis, and documentation formatting during the sprint. All core architectural decisions, pharmacological logic matrices, scheduling algorithms, and clinical validation were human-designed, rigorously reviewed, and tested.
 
----
+We used AI coding assistants for scaffolding, test-case synthesis, and documentation editing. The clinical rule curation, safety architecture, solver design, and final verification were human-reviewed. The product itself uses AI for **perception only** (browser OCR); all interaction and scheduling decisions are deterministic and reproducible.
 
-## Built With
-`python`, `javascript`, `html5`, `css3`, `pharmacology-engine`, `rest-api`, `fda-faers-data`, `json`
+### 🧪 Verification & Limitations
 
-## Try It Out / Links
-- **GitHub Repository:** Public open-source repository with full source code, documentation, and test suite.
-- **Local Quickstart:** `python3 server.py --port 8080` (open `http://localhost:8080`)
+- **35 automated tests pass** (`python3 -m unittest discover tests -v`).
+- The tests cover 20+ curated high-yield interaction pairs and scheduler properties.
+- The knowledge base is a **curated demo subset**, not a validated clinical database.
+- This is not a clinical validation study, and the app is not for real clinical use.
+
+### 🔗 Try It Out
+
+- **GitHub:** https://github.com/shahaman098/pharmaguard-ai
+- **Local:** `python3 server.py --port 8080` → `http://localhost:8080`
+- **Demo cases:** Cardiac polypharmacy, serotonin risk, thyroid + minerals, unverified medicine, no known interactions.
+
+### Built With
+
+`python`, `javascript`, `html5`, `css3`, `tesseract.js`, `ocr`, `constraint-solver`, `rest-api`, `healthcare`, `clinical-pharmacology`, `sbar`

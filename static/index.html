@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PharmaGuard AI — Clinical Prescription Safety Co-Pilot</title>
+  <meta name="description" content="PharmaGuard AI — scan prescription labels, screen for dangerous drug interactions, build a safe 24-hour schedule, and draft a pharmacist-ready SBAR note.">
+  <title>PharmaGuard AI — Prescription Safety &amp; Polypharmacy Co-Pilot</title>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +17,7 @@
     <div class="nav-container">
       <div class="brand">
         <div class="brand-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             <path d="M9 12h6"/>
             <path d="M12 9v6"/>
@@ -24,44 +25,60 @@
         </div>
         <div class="brand-text">
           <span class="brand-title">PharmaGuard <span class="ai-pill">AI</span></span>
-          <span class="brand-sub">Clinical Prescription Safety & Polypharmacy Co-Pilot</span>
+          <span class="brand-sub">Prescription safety, timing resolution &amp; clinician handoff</span>
         </div>
       </div>
       <div class="nav-actions">
-        <span class="status-indicator">
+        <span class="status-indicator" id="kb-status">
           <span class="status-dot"></span>
-          Engine Online · Zero Cloud Bloat
+          <span id="kb-status-text">Local engine online</span>
         </span>
-        <button id="btn-export-sbar" class="btn btn-secondary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          Export SBAR Clinical Memo
+        <button id="btn-export-sbar" class="btn btn-secondary" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Export SBAR
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Container -->
   <main class="main-container">
+
+    <!-- Patient context -->
+    <section class="patient-bar" aria-label="Patient context">
+      <div class="patient-field">
+        <label for="patient-name">Patient name</label>
+        <input id="patient-name" type="text" value="Jane Doe" maxlength="80" autocomplete="off">
+      </div>
+      <div class="patient-field patient-age">
+        <label for="patient-age">Age</label>
+        <input id="patient-age" type="number" value="74" min="1" max="120">
+      </div>
+      <p class="patient-hint">Used only in the SBAR draft and calendar export. Nothing is stored or uploaded.</p>
+    </section>
 
     <!-- Quick Presets Toolbar -->
     <section class="preset-section">
-      <span class="preset-label">Test Clinical Presets:</span>
+      <span class="preset-label">Demo cases:</span>
       <div class="preset-buttons">
-        <button class="btn-preset active" data-preset="cardiac">
+        <button class="btn-preset active" data-preset="cardiac" type="button">
           <span class="preset-icon">🚨</span>
-          <strong>Preset 1:</strong> Cardiac Polypharmacy (Warfarin + Simvastatin + Cipro + Ibuprofen + Calcium)
+          <strong>Cardiac polypharmacy</strong> — 6 medicines
         </button>
-        <button class="btn-preset" data-preset="psych">
+        <button class="btn-preset" data-preset="psych" type="button">
           <span class="preset-icon">⚠️</span>
-          <strong>Preset 2:</strong> Neuro-Pain Synergy (Sertraline + Tramadol + Aspirin)
+          <strong>Serotonin risk</strong> — SSRI + opioid
         </button>
-        <button class="btn-preset" data-preset="endocrine">
+        <button class="btn-preset" data-preset="endocrine" type="button">
           <span class="preset-icon">💊</span>
-          <strong>Preset 3:</strong> Endocrine & Iron Chelation (Levothyroxine + Iron + Metformin)
+          <strong>Thyroid + minerals</strong> — chelation
         </button>
-        <button class="btn-preset" data-preset="safe">
+        <button class="btn-preset" data-preset="unknown" type="button">
+          <span class="preset-icon">❓</span>
+          <strong>Unverified medicine</strong> — fail-safe demo
+        </button>
+        <button class="btn-preset" data-preset="safe" type="button">
           <span class="preset-icon">✅</span>
-          <strong>Preset 4:</strong> Safe Non-Interacting Regimen
+          <strong>No known interactions</strong>
         </button>
       </div>
     </section>
@@ -75,22 +92,30 @@
           <div class="panel-header">
             <div class="panel-title-wrap">
               <h2 class="panel-title">Active Patient Regimen</h2>
-              <span id="med-count-badge" class="badge">5 Medications</span>
+              <span id="med-count-badge" class="badge">0 Medications</span>
             </div>
-            <button id="btn-clear-all" class="btn-text">Clear All</button>
+            <button id="btn-clear-all" class="btn-text" type="button">Clear all</button>
           </div>
 
           <!-- Add Medication Form -->
           <div class="add-med-box">
             <div class="input-row">
               <div class="select-wrapper">
+                <label class="sr-only" for="drug-dropdown">Choose a medication</label>
                 <select id="drug-dropdown" class="select-input">
                   <option value="" disabled selected>-- Select a medication to add --</option>
                 </select>
               </div>
-              <button id="btn-add-drug" class="btn btn-primary">Add Drug</button>
+              <button id="btn-add-drug" class="btn btn-primary" type="button">Add drug</button>
             </div>
-            <p class="field-hint">Supports RxNorm clinical generics and US brand names (e.g. Coumadin, Cipro, Advil, Tums, Synthroid).</p>
+            <div class="scan-row">
+              <button id="btn-scan-label" class="btn btn-scan" type="button">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Scan prescription label
+              </button>
+              <span class="scan-hint">Photo or image · OCR runs in your browser</span>
+            </div>
+            <p class="field-hint">Supports generics and US brand names (Coumadin, Cipro, Advil, Tums, Synthroid, Bactrim, and more). Unknown medicines are flagged, never assumed safe.</p>
           </div>
 
           <!-- Regimen Cards List -->
@@ -98,116 +123,211 @@
             <!-- Dynamic cards inserted via JavaScript -->
           </div>
 
+          <!-- Unverified medication panel -->
+          <div id="unverified-panel" class="unverified-panel hidden" aria-live="polite">
+            <div class="unverified-title">
+              <span class="unverified-icon">❓</span>
+              <strong>Unverified medicines</strong>
+            </div>
+            <p>These are not in the demo knowledge base. The audit will not call the regimen safe.</p>
+            <div id="unverified-list" class="unverified-list"></div>
+          </div>
+
           <!-- Audit Action Button -->
           <div class="audit-action-box">
-            <button id="btn-run-audit" class="btn btn-audit">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Run Clinical Safety Audit
+            <button id="btn-run-audit" class="btn btn-audit" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Run clinical safety audit
             </button>
           </div>
+        </div>
+
+        <div class="panel method-panel">
+          <h3>What the engine checks</h3>
+          <ul class="method-list">
+            <li><strong>Interactions:</strong> CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia.</li>
+            <li><strong>Absorption:</strong> calcium/iron chelation and thyroid-hormone spacing.</li>
+            <li><strong>Timing:</strong> fasting, meals, bedtime, twice-daily intervals, weekly and as-needed medicines.</li>
+            <li><strong>Fail-safe:</strong> anything outside the 52-drug demo knowledge base is marked unverified.</li>
+          </ul>
         </div>
       </div>
 
       <!-- Right Column: Audit Results & Safety Intelligence -->
       <div class="column-right">
-        
+
         <!-- Score & Safety Summary Banner -->
-        <div id="safety-score-card" class="score-card score-danger">
+        <div id="safety-score-card" class="score-card score-safe" aria-live="polite">
           <div class="score-visual">
             <div class="score-circle">
-              <span id="score-value" class="score-num">30</span>
+              <span id="score-value" class="score-num">100</span>
               <span class="score-max">/100</span>
             </div>
           </div>
           <div class="score-details">
             <div class="score-status-badge">
-              <span id="score-status-text">CRITICAL RISK — PHYSICIAN CONSULTATION REQUIRED</span>
+              <span id="score-status-text">NO MEDICATIONS TO REVIEW</span>
             </div>
             <div id="score-summary-metrics" class="score-metrics">
-              <span class="metric-tag red">2 Critical Contraindications</span>
-              <span class="metric-tag amber">1 Absorption Conflict</span>
+              <span class="metric-tag green">0 Conflicts</span>
             </div>
-            <p id="score-recommendation-sub" class="score-subtext">Immediate clinical adjustment recommended. Lethal bleeding and CYP3A4 toxicity risks detected.</p>
+            <p id="score-recommendation-sub" class="score-subtext">Add medications to run a safety audit.</p>
           </div>
         </div>
 
-        <!-- Navigation Tabs: Safety Violations vs. 24-Hour Schedule vs. Patient View -->
-        <div class="tab-bar">
-          <button class="tab-btn active" data-tab="violations">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Contraindications & Alerts (<span id="violations-count">3</span>)
+        <!-- Navigation Tabs -->
+        <div class="tab-bar" role="tablist" aria-label="Audit views">
+          <button class="tab-btn active" data-tab="violations" type="button" role="tab" aria-selected="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Alerts &amp; interaction map (<span id="violations-count">0</span>)
           </button>
-          <button class="tab-btn" data-tab="timeline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            24-Hour De-conflicted Schedule
+          <button class="tab-btn" data-tab="timeline" type="button" role="tab" aria-selected="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            24-hour schedule
           </button>
-          <button class="tab-btn" data-tab="patient">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Patient Safety Advice (5th Grade)
+          <button class="tab-btn" data-tab="patient" type="button" role="tab" aria-selected="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Patient advice
           </button>
         </div>
 
-        <!-- Tab Content 1: Violations & Alerts -->
-        <div id="tab-violations" class="tab-pane active">
+        <!-- Tab 1: Alerts -->
+        <div id="tab-violations" class="tab-pane active" role="tabpanel">
+          <div id="graph-container" class="graph-container hidden">
+            <div class="graph-header">
+              <h3>Interaction map</h3>
+              <span class="graph-legend"><span class="dot red"></span> Critical <span class="dot amber"></span> Monitor / timing</span>
+            </div>
+            <div id="interaction-graph" class="interaction-graph"></div>
+          </div>
           <div id="violations-container" class="violations-container">
             <!-- Dynamic alerts -->
           </div>
         </div>
 
-        <!-- Tab Content 2: 24-Hour Timeline -->
-        <div id="tab-timeline" class="tab-pane">
+        <!-- Tab 2: Timeline -->
+        <div id="tab-timeline" class="tab-pane" role="tabpanel">
           <div class="timeline-intro-box">
             <div class="timeline-info">
-              <h3>Pharmacokinetic Schedule De-confliction</h3>
-              <p>Our temporal algorithm spaces chelating agents (calcium/iron) away from antibiotics and thyroid hormones by 3–4 hours, resolving gut absorption conflicts automatically.</p>
+              <h3>Constraint-based schedule de-confliction</h3>
+              <p>The solver enforces fasting windows, meals, twice-daily intervals, bedtime placement, and 3–4 hour chelation spacing. Weekly and as-needed medicines are kept out of the daily timeline.</p>
             </div>
-            <button id="btn-re-optimize" class="btn btn-secondary btn-sm">Re-optimize</button>
+            <div class="timeline-actions">
+              <button id="btn-re-optimize" class="btn btn-secondary btn-sm" type="button">Re-optimize</button>
+              <button id="btn-calendar" class="btn btn-primary btn-sm" type="button">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Add to calendar
+              </button>
+            </div>
           </div>
           <div id="timeline-container" class="timeline-container">
-            <!-- Dynamic 24-hour slots -->
+            <!-- Dynamic schedule groups -->
           </div>
+          <div id="weekly-prn-container" class="weekly-prn-container"></div>
+          <div id="schedule-notes" class="schedule-notes"></div>
         </div>
 
-        <!-- Tab Content 3: Patient Care Advice -->
-        <div id="tab-patient" class="tab-pane">
+        <!-- Tab 3: Patient advice -->
+        <div id="tab-patient" class="tab-pane" role="tabpanel">
           <div class="patient-advice-box">
             <div class="advice-header">
-              <h3>Plain-Language Medication Guide</h3>
-              <span class="reading-badge">Grade 5 Reading Level</span>
+              <h3>Plain-language medication guide</h3>
+              <span class="reading-badge">Designed for caregivers</span>
             </div>
-            <p class="advice-desc">Simplified, clear instructions designed for patients and family caregivers to prevent mistakes at home.</p>
+            <p class="advice-desc">Clear next steps for patients and family caregivers. This guidance is generated from the same deterministic audit and is not medical advice.</p>
             <div id="patient-advice-list" class="patient-advice-list">
               <!-- Dynamic advice items -->
             </div>
+            <div class="patient-disclaimer" id="patient-disclaimer">
+              Demo only. Always confirm with a pharmacist or prescriber.
+            </div>
           </div>
         </div>
 
       </div>
-
     </div>
 
+    <p class="global-disclaimer" id="global-disclaimer">
+      PharmaGuard AI is an educational prototype with a curated demo knowledge base. It is not a validated clinical device and does not replace a pharmacist or physician.
+    </p>
   </main>
 
+  <!-- Label Scan Modal -->
+  <div id="scan-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="scan-modal-title">
+    <div class="modal-card scan-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 id="scan-modal-title">Scan a prescription label</h3>
+          <span class="sbar-pill">Browser OCR · no upload</span>
+        </div>
+        <button id="btn-close-scan" class="modal-close" type="button" aria-label="Close scan dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Choose a clear photo of the label. The image is read locally in your browser; only the recognized text is used to suggest medicines.</p>
+
+        <label id="scan-dropzone" class="scan-dropzone" for="scan-file">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <strong>Drop a label image here, or click to choose</strong>
+          <span>PNG, JPG, or WebP · max 8 MB</span>
+          <input id="scan-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+        </label>
+
+        <div class="scan-sample-row">
+          <button id="btn-sample-label" class="btn btn-secondary btn-sm" type="button">Try a sample label</button>
+          <span class="scan-hint">Useful for a quick demo.</span>
+        </div>
+
+        <div id="scan-preview-wrap" class="scan-preview-wrap hidden">
+          <img id="scan-preview" class="scan-preview" alt="Selected prescription label preview">
+        </div>
+
+        <div id="scan-progress" class="scan-progress hidden" aria-live="polite">
+          <div class="progress-track"><div id="scan-progress-bar" class="progress-bar"></div></div>
+          <span id="scan-progress-text">Preparing label reader…</span>
+        </div>
+
+        <div id="scan-results" class="scan-results hidden">
+          <div class="scan-results-header">
+            <strong>Recognized text</strong>
+            <button id="btn-clear-scan" class="btn-text" type="button">Clear</button>
+          </div>
+          <pre id="scan-text" class="scan-text"></pre>
+          <div id="scan-detected" class="scan-detected"></div>
+        </div>
+
+        <details class="scan-paste">
+          <summary>OCR unavailable? Paste label text instead</summary>
+          <textarea id="scan-paste-text" class="sbar-textarea" rows="4" placeholder="Example: Warfarin 5 mg — take one tablet by mouth every evening"></textarea>
+          <button id="btn-parse-paste" class="btn btn-secondary btn-sm" type="button">Find medicines in text</button>
+        </details>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-add-scanned" class="btn btn-primary" type="button" disabled>Add selected medicines</button>
+        <button id="btn-done-scan" class="btn btn-secondary" type="button">Done</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SBAR Modal -->
-  <div id="sbar-modal" class="modal-overlay">
+  <div id="sbar-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="sbar-modal-title">
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title-group">
-          <h3>Clinical Pharmacy Escalation Memo</h3>
-          <span class="sbar-pill">Standardized SBAR Protocol</span>
+          <h3 id="sbar-modal-title">Clinical pharmacy review draft</h3>
+          <span class="sbar-pill">SBAR format · pharmacist verification required</span>
         </div>
-        <button id="btn-close-modal" class="modal-close">&times;</button>
+        <button id="btn-close-modal" class="modal-close" type="button" aria-label="Close SBAR dialog">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="modal-desc">This memo summarizes all critical contraindications and absorption conflicts for physician review.</p>
+        <p class="modal-desc">This draft summarizes verified interactions, unverified medicines, and timing issues for pharmacist or physician review.</p>
         <textarea id="sbar-textarea" class="sbar-textarea" readonly></textarea>
       </div>
       <div class="modal-footer">
-        <button id="btn-copy-sbar" class="btn btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          <span id="copy-btn-text">Copy to Clipboard</span>
+        <button id="btn-copy-sbar" class="btn btn-primary" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span id="copy-btn-text">Copy to clipboard</span>
         </button>
-        <button id="btn-modal-done" class="btn btn-secondary">Done</button>
+        <button id="btn-modal-done" class="btn btn-secondary" type="button">Done</button>
       </div>
     </div>
   </div>
@@ -215,10 +335,11 @@
   <footer class="footer">
     <div class="footer-container">
       <div><strong>PharmaGuard AI</strong> · Built for DSH Hacks V2 (AI × Healthcare)</div>
-      <div>Open Source Clinical Pharmacology Engine · Sub-50ms Latency</div>
+      <div id="footer-kb">Curated demo knowledge base · not for clinical use</div>
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,154 +1,208 @@
 #!/usr/bin/env python3
-"""PharmaGuard AI — Local REST API and Web Application Server.
+"""PharmaGuard AI — local REST API and web application server.
 
-Pure Python 3 standard library, zero external pip dependencies.
+Pure Python 3 standard library. No external pip dependencies.
 """
 
-import sys
+from __future__ import annotations
+
 import json
 import mimetypes
+import os
+import sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
 from pharmaguard.engine import ClinicalSafetyEngine
+from pharmaguard.interactions import DISCLAIMER, DRUG_REGISTRY, KNOWLEDGE_BASE_META
 from pharmaguard.scheduler import ScheduleOptimizer
-from pharmaguard.interactions import DRUG_REGISTRY
 
 
 class PharmaGuardHandler(BaseHTTPRequestHandler):
-
     engine = ClinicalSafetyEngine()
     scheduler = ScheduleOptimizer()
-    static_dir = Path(__file__).parent / "static"
+    static_dir = (Path(__file__).parent / "static").resolve()
 
-    def _set_cors_headers(self):
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+    def _set_common_headers(self, content_type: str, cache: str = "no-store") -> None:
+        self.send_header("Content-Type", content_type)
+        self.send_header("Cache-Control", cache)
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self._set_cors_headers()
+    def _send_json(self, payload: object, status: int = 200) -> None:
+        body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+        self.send_response(status)
+        self._set_common_headers("application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
+        self.wfile.write(body)
 
-    def do_GET(self):
-        parsed = urlparse(self.path)
-        path = parsed.path
+    def _send_text(self, text: str, status: int = 200) -> None:
+        body = text.encode("utf-8")
+        self.send_response(status)
+        self._set_common_headers("text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
-        if path == "/api/drugs":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self._set_cors_headers()
-            self.end_headers()
-            drugs = [
-                {
-                    "key": k,
-                    "name": v["name"],
-                    "brand": v["brand"],
-                    "class": v["class"],
-                    "default_dose": v["default_dose"],
-                    "default_time": v["default_time"],
-                    "food_warnings": v["food_warnings"]
-                }
-                for k, v in DRUG_REGISTRY.items()
-            ]
-            self.wfile.write(json.dumps({"drugs": drugs}, indent=2).encode("utf-8"))
-            return
-
-        if path == "/api/health":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self._set_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps({"status": "healthy", "service": "PharmaGuard AI"}).encode("utf-8"))
-            return
-
-        # Serve static frontend files
-        if path == "/" or path == "":
-            file_path = self.static_dir / "index.html"
-        else:
-            file_path = self.static_dir / path.lstrip("/")
-
-        if file_path.is_file():
-            mime_type, _ = mimetypes.guess_type(str(file_path))
-            self.send_response(200)
-            self.send_header("Content-Type", mime_type or "text/plain")
-            self._set_cors_headers()
-            self.end_headers()
-            self.wfile.write(file_path.read_bytes())
-        else:
-            self.send_response(404)
-            self.send_header("Content-Type", "text/plain")
-            self.end_headers()
-            self.wfile.write(b"404 Not Found")
-
-    def do_POST(self):
-        parsed = urlparse(self.path)
-        path = parsed.path
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length) if length > 0 else b"{}"
-
+    def _read_json(self) -> dict:
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except (TypeError, ValueError):
+            length = 0
+        if length <= 0 or length > 2_000_000:
+            return {}
+        body = self.rfile.read(length)
         try:
             payload = json.loads(body.decode("utf-8"))
-        except json.JSONDecodeError:
-            self.send_response(400)
-            self.send_header("Content-Type", "application/json")
-            self._set_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Invalid JSON"}).encode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return {}
+        return payload if isinstance(payload, dict) else {}
+
+    def _safe_static_path(self, raw_path: str) -> Path | None:
+        relative = raw_path.lstrip("/")
+        if not relative:
+            relative = "index.html"
+        candidate = (self.static_dir / relative).resolve()
+        try:
+            if candidate == self.static_dir or candidate.is_relative_to(self.static_dir):
+                return candidate
+        except AttributeError:  # pragma: no cover - Python < 3.9 fallback
+            if str(candidate).startswith(str(self.static_dir) + os.sep):
+                return candidate
+        return None
+
+    # ------------------------------------------------------------------
+    # HTTP verbs
+    # ------------------------------------------------------------------
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        self._set_common_headers("text/plain")
+        self.end_headers()
+
+    def do_GET(self) -> None:
+        parsed = urlparse(self.path)
+        path = parsed.path
+
+        if path == "/api/health":
+            self._send_json({
+                "status": "healthy",
+                "service": "PharmaGuard AI",
+                "knowledge_base": KNOWLEDGE_BASE_META["version"],
+            })
             return
+
+        if path == "/api/meta":
+            self._send_json({
+                "knowledge_base": KNOWLEDGE_BASE_META,
+                "disclaimer": DISCLAIMER,
+                "features": {
+                    "label_scan": True,
+                    "constraint_scheduler": True,
+                    "calendar_export": True,
+                    "sbar_export": True,
+                },
+            })
+            return
+
+        if path == "/api/drugs":
+            drugs = [
+                {
+                    "key": key,
+                    "name": value["name"],
+                    "brand": value["brand"],
+                    "class": value["class"],
+                    "default_dose": value["default_dose"],
+                    "default_time": value["default_time"],
+                    "food_warnings": value["food_warnings"],
+                    "aliases": value.get("aliases", []),
+                    "schedule": value.get("schedule", {}),
+                }
+                for key, value in DRUG_REGISTRY.items()
+            ]
+            self._send_json({"drugs": drugs, "count": len(drugs)})
+            return
+
+        file_path = self._safe_static_path(path)
+        if file_path is None or not file_path.is_file():
+            self._send_text("404 Not Found", 404)
+            return
+
+        mime_type, _ = mimetypes.guess_type(str(file_path))
+        body = file_path.read_bytes()
+        self.send_response(200)
+        self._set_common_headers(
+            mime_type or "application/octet-stream",
+            cache="no-cache",
+        )
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self) -> None:
+        parsed = urlparse(self.path)
+        path = parsed.path
+        payload = self._read_json()
 
         if path == "/api/audit":
             medications = payload.get("medications", [])
+            if not isinstance(medications, list):
+                self._send_json({"error": "medications must be a list of strings"}, 400)
+                return
             result = self.engine.audit_regimen(medications)
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self._set_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps(result, indent=2).encode("utf-8"))
+            self._send_json(result)
             return
 
         if path == "/api/reschedule":
             regimen = payload.get("regimen", [])
             interactions = payload.get("interactions", [])
-            schedule = self.scheduler.build_schedule(regimen, interactions)
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self._set_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps(schedule, indent=2).encode("utf-8"))
+            if not isinstance(regimen, list) or not isinstance(interactions, list):
+                self._send_json({"error": "regimen and interactions must be lists"}, 400)
+                return
+            self._send_json(self.scheduler.build_schedule(regimen, interactions))
             return
 
         if path == "/api/sbar":
             audit_result = payload.get("audit_result", {})
-            patient_name = payload.get("patient_name", "Patient Jane Doe")
-            age = payload.get("age", 74)
-            sbar_text = self.engine.generate_sbar_note(audit_result, patient_name, age)
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self._set_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps({"sbar": sbar_text}, indent=2).encode("utf-8"))
+            if not isinstance(audit_result, dict):
+                self._send_json({"error": "audit_result must be an object"}, 400)
+                return
+            patient_name = str(payload.get("patient_name", "Patient Jane Doe"))[:120]
+            try:
+                age = int(payload.get("age", 74))
+            except (TypeError, ValueError):
+                age = 74
+            sbar = self.engine.generate_sbar_note(audit_result, patient_name, age)
+            self._send_json({"sbar": sbar})
             return
 
-        self.send_response(404)
-        self.send_header("Content-Type", "text/plain")
-        self.end_headers()
-        self.wfile.write(b"Endpoint not found")
+        self._send_text("Endpoint not found", 404)
 
-    def log_message(self, format, *args):
-        # Quiet logger for clean test output
-        sys.stderr.write(f"[{self.log_date_time_string()}] {format % args}\n")
+    def log_message(self, fmt: str, *args) -> None:
+        sys.stderr.write(f"[{self.log_date_time_string()}] {fmt % args}\n")
 
 
-def run_server(port: int = 8080):
-    server_address = ("127.0.0.1", port)
-    httpd = HTTPServer(server_address, PharmaGuardHandler)
-    print(f"============================================================")
-    print(f"  PharmaGuard AI Server listening at http://127.0.0.1:{port}")
-    print(f"  Zero external dependencies. Press Ctrl+C to stop.")
-    print(f"============================================================")
+def run_server(port: int = 8080, host: str = "0.0.0.0") -> None:
+    try:
+        httpd = ThreadingHTTPServer((host, port), PharmaGuardHandler)
+    except OSError as exc:
+        print(f"Could not bind to {host}:{port} — {exc}", file=sys.stderr)
+        print("Is another server already running on this port?", file=sys.stderr)
+        raise SystemExit(1)
+    display_host = "localhost" if host in ("0.0.0.0", "::") else host
+    print("============================================================")
+    print(f"  PharmaGuard AI listening at http://{display_host}:{port}")
+    print(f"  Knowledge base: {KNOWLEDGE_BASE_META['drug_count']} drugs, "
+          f"{KNOWLEDGE_BASE_META['rule_count']} rules")
+    print("  Zero external pip dependencies. Press Ctrl+C to stop.")
+    print("============================================================")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
@@ -157,7 +211,13 @@ def run_server(port: int = 8080):
 
 
 if __name__ == "__main__":
-    port = 8080
+    port = int(os.environ.get("PORT", "8080"))
+    host = os.environ.get("HOST", "0.0.0.0")
     if len(sys.argv) > 1 and sys.argv[1] in ("--port", "-p") and len(sys.argv) > 2:
         port = int(sys.argv[2])
-    run_server(port)
+    if "--host" in sys.argv:
+        try:
+            host = sys.argv[sys.argv.index("--host") + 1]
+        except IndexError:
+            pass
+    run_server(port=port, host=host)

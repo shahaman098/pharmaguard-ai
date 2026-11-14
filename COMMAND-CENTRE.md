@@ -1,71 +1,100 @@
-# DSH HACKS V2 — COMMAND CENTRE
-Compiled: 2026-11-14 ~15:20 UTC · **Deadline: Sunday 15 Nov, 07:45 UTC (11:45 PM PST) — NO extension**
+# DSH Hacks V2 — Strategy & Status
+
+**Event:** DSH Hacks V2 — global student online hackathon (AI × Healthcare)
+**Organizers:** DeltaForge Hacks, NXT Horizon, STEMise
+**Submission lock:** Nov 14, 2026 · 11:45 PM PST (Nov 15 · 07:45 UTC)
+**Judging:** Nov 15–22 · **Winners:** Nov 23
+**Repo:** https://github.com/shahaman098/pharmaguard-ai
+
+> This file replaces the earlier strategy notes. Prize details, deadlines, and claims here are the verified ones.
 
 ---
 
-## 01 — Situation & Executive Brief
-- **Event:** DSH Hacks V2 — Global student online hackathon hosted on Devpost ([dsh-hacks-v2.devpost.com](https://dsh-hacks-v2.devpost.com)).
-- **Organizers:** Collaborative youth initiative by **DeltaForge Hacks**, **NXT Horizon**, and **STEMise** (fiscally sponsored by The Hack Foundation / Hack Club).
-- **Theme:** **AI × Healthcare** (transitioned from V1's AI × STEM education theme).
-- **Prizes:** $100k+ total prize pool featuring:
-  - **1st Place Overall:** $100 Cash + $100 Art of Problem Solving (AoPS) Gift Card + $2,000 Momen Credits + 2-Year CodeCrafters VIP ($720) + sponsor perks.
-  - **2nd & 3rd Place:** $2,000 Momen Credits + sponsor perks.
-  - **Track Awards:** Tin Computer Growth Plan, Best Research-Oriented Project (YRI).
-- **Time Remaining:** **~16h25m** as of kickoff.
-- **Operating Doctrine:** Universal Command Centre Doctrine (action before endless research, 10/10 idea validation, compressed intelligence sprint, deterministic verification, submission QA).
+## 1. Verified event facts
+
+| Item | Reality |
+|---|---|
+| Participants | 1,243 registered |
+| Submissions in gallery | 227+ at the time of writing |
+| Judging criteria | **Idea, Implementation, Design, Presentation** (no published weights) |
+| Judging format | Asynchronous review of the Devpost page, video, repo, and one-pager |
+| Overall prizes | 1st, 2nd, 3rd (sponsor credits: Momen, Adaption Labs, CodeCrafters, Devswarm, Cleanshot, AoPS) |
+| Other prizes | Tin Computer Growth Plan (up to 100 teams) and Best Research-Oriented Project (YRI) |
+| Requirements | Working project, demo video, one-page PDF, public GitHub repo or code PDF |
+
+There is **no $100 cash prize**. The `$100k+` headline is the aggregate value of sponsor credits, not cash.
 
 ---
 
-## 02 — Judging Rubric & Scoring Engine
-Evaluated across 4 core pillars (equal weighting inferred):
-1. **Clinical Insight & Real-World Impact (25%):** Genuine medical pain point, patient safety risk, or clinical operational bottleneck addressed.
-2. **Technical Depth & Execution (25%):** Quality of architecture, real multi-step pipeline (not a cosmetic prompt wrapper), deterministic verification, and reliability.
-3. **Creativity & Innovation (25%):** Anti-obvious angle; solves the hidden workflow rather than a generic chatbot.
-4. **Feasibility & Scalability (25%):** Practical adoption path into healthcare workflows without unrealistic regulatory or technical dependencies.
+## 2. Competitive read
+
+The medication space is not empty. Adjacent entries in the public gallery include:
+
+- **Tabble-It** — medication management for patients, caregivers, and pharmacies.
+- **GenMed** — AI prescription decoding and medicine guidance.
+- **Medi Bridge** — real-time pharmacy/hospital medicine availability.
+
+Most entries, however, are shallow AI wrappers. The winning wedge is **execution + a defensible safety architecture**, not a broader feature list.
 
 ---
 
-## 03 — Strict Compliance Matrix (Risk-Ordered)
-| # | Requirement | Official Specification | Strategy / Status | Risk Level |
-|---|---|---|---|---|
-| 1 | **Working Prototype** | Functional app, website, or coding prototype with user interaction | Self-contained Python + Modern Web App ready to run locally & live | 🔴 Critical (DQ if mock only) |
-| 2 | **Demo Video Duration** | Walkthrough showing problem, features, and live interaction | **Target 2:15 – 2:45** (verified with `check_video.py`) | 🔴 Critical (DQ if missing) |
-| 3 | **One-Page Project PDF** | Concise 1-page document detailing purpose and key features | Generated as `ONE-PAGE-SUMMARY.html` (print to PDF) | 🔴 Critical (Explicit Devpost requirement) |
-| 4 | **Public GitHub Repo** | Link to public code repository with clean documentation | Push to GitHub, formatted README + tests | 🔴 Critical |
-| 5 | **Project ZIP File** | Full source archive uploaded to Devpost | Packaged `dsh-hacks-v2-submission.zip` | 🟡 Medium |
-| 6 | **Eligibility** | Students aged 13+ enrolled in educational institution | Solo / Team student declaration | 🟢 Confirmed |
-| 7 | **AI Usage Policy** | Explicitly permitted and encouraged | Full transparency statement in writeup | 🟢 Compliant |
+## 3. Positioning
+
+> **"AI perception + deterministic clinical safety + real constraint resolution."**
+
+PharmaGuard is not an AI doctor and does not let a generative model make clinical calls:
+
+1. **Perception:** browser OCR reads a label photo; the user confirms the result.
+2. **Safety:** a 52-drug, 77-rule deterministic engine detects interactions and refuses to certify unknown medicines.
+3. **Resolution:** a backtracking constraint solver builds a 24-hour schedule with fasting, meal, bedtime, interval, and chelation constraints.
+4. **Handoff:** SBAR draft, plain-language advice, and `.ics` calendar export.
+
+This story is easy to explain in 30 seconds, defensible under code review, and visually demoable.
 
 ---
 
-## 04 — Organiser & Sponsor Intelligence
-- **STEMise & DeltaForge Hacks:** Youth-driven STEM ecosystems focused on high-utility tools, clinical/educational access, and youth innovation.
-- **Sponsors:**
-  - **Art of Problem Solving (AoPS):** Values logical rigor, deep problem-solving, and educational/analytical precision.
-  - **Momen:** No-code / full-stack web platform; appreciates extensible API backends and modular UI architecture.
-  - **CodeCrafters:** Elite engineering culture; rewards code quality, test coverage, and deterministic algorithms over vague claims.
-  - **Tin Computer:** High-performance infrastructure and deployable systems.
+## 4. What shipped
+
+- Label OCR intake with human confirmation and paste fallback.
+- 52-drug / 77-rule knowledge base with alias-safe resolution.
+- Fail-safe `UNVERIFIED` state and coverage accounting.
+- Backtracking scheduler with explicit adjustments and unresolved-conflict reporting.
+- Interaction map, 24-hour timeline, weekly/PRN buckets.
+- Patient advice, SBAR draft, and `.ics` calendar export.
+- 35 automated tests, all passing.
+- Deployment configs (`render.yaml`, `Procfile`, `Dockerfile`).
 
 ---
 
-## 05 — Competitive Landscape & Anti-Obvious Positioning
-- **What 90% of entrants build (Crowded Archetypes to AVOID):**
-  - Generic "AI Doctor" symptom checker bot that regurgitates WebMD advice.
-  - "Mental Health companion" chatbot giving generic therapy platitudes.
-  - Basic calorie / fitness tracker dashboard with ChatGPT commentary.
-- **Our Strategic Wedge (Anti-Obvious Inversion):**
-  - **Target:** **Polypharmacy & Prescription Safety in Vulnerable Patients**.
-  - Over 1.3 million emergency department visits annually stem from Adverse Drug Events (ADEs). Elderly patients often take 5 to 10+ daily medications across different prescribing doctors.
-  - **The Missing Workflow:** Patients and caregivers have physical bottles, blister packs, and conflicting schedules. They don't need a medical encyclopedia; they need an **autonomous safety engine** that ingests prescriptions, detects hidden drug-drug and food-drug interactions, calculates kinetic absorption conflicts, and generates a **zero-conflict daily schedule** with 1-click clinical escalation notes.
+## 5. Remaining owner tasks
+
+1. Deploy a live URL (Render blueprint or any host with `$PORT`).
+2. Record the 2:30 demo video from `DEMO-SCRIPT.md`.
+3. Print `ONE-PAGE-SUMMARY.html` to a one-page PDF.
+4. Fill the Devpost form from `DEVPOST-COPY.md` and `DEVPOST-ANSWERS.md`.
+5. Run the incognito QA checklist in `SUBMISSION-KIT.md`.
+6. Submit at least 2 hours before the lock.
 
 ---
 
-## 06 — Strategic Selection: **PharmaGuard AI**
-- **Project Name:** **PharmaGuard AI**
-- **Tagline:** Multimodal Prescription & Polypharmacy Safety Co-Pilot — detects lethal drug interactions, resolves timing conflicts, and drafts clinical pharmacist escalation notes.
-- **Core Loop (30-Second Killer Demo):**
-  1. *Upload / Scan:* User uploads prescription bottle labels or enters regimen (e.g. Warfarin, Simvastatin, Clarithromycin, Ciprofloxacin, Ibuprofen, Calcium Carbonate).
-  2. *Safety Audit:* Engine scans against RxNorm & clinical interaction matrices; flags severe cytochrome P450 inhibition and kinetic chelation risks.
-  3. *Autonomous De-confliction:* Generates an optimal 24-hour administration timeline separating chelating agents and reducing peak serum concentration clashes.
-  4. *Clinical Action:* Drafts an SBAR (Situation, Background, Assessment, Recommendation) note ready to copy for the treating physician or pharmacist.
-- **Deterministic Proof:** Comprehensive automated test suite validating 100% detection on clinical contraindication gold standards.
+## 6. Risk register
+
+| Risk | Status | Mitigation |
+|---|---|---|
+| False “safe” on an unknown drug | Fixed | Fail-closed `UNVERIFIED` state with visible coverage |
+| “Iron” resolving to spironolactone | Fixed | Token-aware alias index + regression test |
+| Scheduler is a lookup table | Fixed | Backtracking constraint solver + property tests |
+| Claims exceed the build | Fixed | All docs rewritten to match shipped features |
+| No public repo | Fixed | Repo is live and pushed |
+| No video/PDF yet | Open | Owner tasks above |
+| Overclaiming clinical accuracy | Fixed | “35 tests on a curated demo set — not clinical validation” |
+
+---
+
+## 7. Judge-facing proof points
+
+- Open the repo and run `python3 -m unittest discover tests -v` → 35/35.
+- Open the app, load the cardiac case, and see two critical interactions plus timing resolution.
+- Type an unknown medicine and watch the app refuse to call the regimen safe.
+- Export the schedule to a calendar and the SBAR draft for a clinician.
+- Read `BENCHMARK-REPORT.md` for the honest scope and limitations.
