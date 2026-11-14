@@ -209,7 +209,7 @@ These are engineering tests, **not** a clinical validation study. See [`BENCHMAR
 - The knowledge base is a **curated demo subset**, not a licensed clinical database.
 - OCR can misread labels; every detection requires human confirmation.
 - The scheduler optimizes timing only. It does not calculate renal/hepatic doses, validate indications, or replace a pharmacist.
-- The app has no accounts, no database, and stores no patient data. Patient name/age stay in the browser and are only used in generated artifacts.
+- The app has no accounts, no database, and stores no patient data. Patient name/age are used only to render the SBAR and calendar artifacts; they are not persisted.
 - **Do not use this for real clinical decisions.**
 
 ---
