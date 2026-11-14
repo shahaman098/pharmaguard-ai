@@ -45,3 +45,6 @@ venv.bak/
 *.mp4
 !demo/*.mp4
 dsh-hacks-v2-submission.zip
+
+# Local-only planning notes (not part of the submission)
+.notes/
