@@ -557,7 +557,8 @@ STATUS:    Decision-support draft — requires pharmacist verification
 [S] SITUATION
 -------------
 Automated screening found {len(critical)} critical interaction(s), {len(moderate)}
-monitoring/timing issue(s), and {len(unknown)} unverified medication(s).
+monitoring/timing issue(s), {len(dose_flags)} kidney/age dosing flag(s)
+({sum(1 for f in dose_flags if f.get('severity') == 'CRITICAL')} critical), and {len(unknown)} unverified medication(s).
 Safety index: {audit_result.get('safety_score', 'n/a')}/100. Knowledge-base coverage:
 {audit_result.get('coverage_pct', 'n/a')}%.
 

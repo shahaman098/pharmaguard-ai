@@ -88,12 +88,15 @@
 
 **Clicks:**
 1. Close the SBAR modal.
-2. Click the **Unverified medicine** demo case.
+2. Click the **Unknown drug** demo case.
 3. Point at **INCOMPLETE — UNVERIFIED MEDICATIONS**, **75/100**, **67% verified**, and the unverified chip.
 4. Show the patient advice line beginning “UNVERIFIED.”
 
 **Narration:**
 “This is the part we care about most. If a medicine is not in our knowledge base, PharmaGuard does not guess. It marks the regimen incomplete and tells the patient to ask a pharmacist. A false ‘safe’ is worse than an honest ‘I don’t know.’”
+
+**Kidney dosing beat (+10 s, right after the fail-safe):** click the **Kidney patient** demo case (eGFR 28, CrCl 26 fill in automatically). Point at the **Metformin contraindicated: eGFR below 30** card and its quote, *“contraindicated in patients with: Severe renal impairment (eGFR below 30 mL/min/1.73 m2)”*.
+> "Give it the patient's kidney function and it doses for this patient: metformin is contraindicated below an eGFR of 30, and that's the FDA label's own sentence, not ours. Leave the field blank and it says 'not checked', never 'normal'."
 
 ### 2:18–2:30 — Proof and close
 

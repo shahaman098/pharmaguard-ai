@@ -489,7 +489,7 @@ function renderEvidenceSummary(list, flags) {
     <div class="es-legend">
       <span><i class="es-direct"></i>FDA label quote (${direct})</span>
       <span><i class="es-class"></i>Class-level mention (${classOnly})</span>
-      <span><i class="es-other"></i>Curated rule, not in label text (${other})</span>
+      <span><i class="es-other"></i>Curated rule only, no label quote (${other})</span>
     </div>`;
   violationsContainer.appendChild(bar);
 }
