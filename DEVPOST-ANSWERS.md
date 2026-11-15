@@ -72,7 +72,7 @@ A: The Python server uses only the standard library. The browser loads Tesseract
 
 **Q: How was the project validated?**
 
-A: 53 automated tests pass, covering alias resolution, 20+ high-yield interaction pairs, unknown-drug fail-safe behavior, SBAR structure, chelation spacing, fasting/meal/bedtime placement, weekly/PRN handling, label dose overrides, large-regimen fallback, determinism, and day-window bounds. This is engineering verification on a curated demo set — not a clinical validation study. The limitations are stated in `BENCHMARK-REPORT.md`.
+A: 67 automated tests pass, covering alias resolution, 20+ high-yield interaction pairs, unknown-drug fail-safe behavior, SBAR structure, chelation spacing, fasting/meal/bedtime placement, weekly/PRN handling, label dose overrides, large-regimen fallback, determinism, and day-window bounds. This is engineering verification on a curated demo set — not a clinical validation study. The limitations are stated in `BENCHMARK-REPORT.md`.
 
 **Q: Is this safe to use for real patients?**
 
@@ -92,5 +92,5 @@ A: A licensed interaction dataset, clinician-adjudicated validation, FHIR medica
 - [ ] Source ZIP contains `server.py`, `pharmaguard/`, `static/`, `tests/`.
 - [ ] No unresolved placeholders (`<YOUR_USERNAME>`, `[TODO]`) in the writeup. (Local `localhost` run commands are fine.)
 - [ ] Fill or remove the **Live demo** and **Video** lines in `DEVPOST-COPY.md`.
-- [ ] Claims match the build: 53 tests, 52 drugs, 77 rules, no “100% accuracy.”
+- [ ] Claims match the build: 67 tests, 52 drugs, 77 rules, no “100% accuracy.”
 - [ ] Submission saved and confirmed.

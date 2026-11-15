@@ -12,7 +12,7 @@
 |---|---|
 | Working prototype | ✅ Complete: OCR intake, audit, interaction map, solver, calendar, SBAR |
 | Public GitHub repo | ✅ Live at the URL above |
-| Tests | ✅ 53/53 passing |
+| Tests | ✅ 67/67 passing |
 | One-page PDF | ⏳ Print `ONE-PAGE-SUMMARY.html` to PDF |
 | Demo video | ⏳ Record from `DEMO-SCRIPT.md` (2:30 target) |
 | Live demo URL | ✅ https://pharmaguard-ai-5jhp.onrender.com |
@@ -125,7 +125,7 @@ Open an incognito window and check:
 - [ ] No unresolved placeholders like `<YOUR_USERNAME>` or `[TODO]` in the submission copy. (Local `localhost` run commands are fine.)
 - [x] Fill or remove the **Live demo** and **Video** lines at the top of `DEVPOST-COPY.md`.
 - [x] Live demo URL works (if deployed): https://pharmaguard-ai-5jhp.onrender.com
-- [ ] Submission says “53 tests,” “52 drugs,” “77 rules,” not “100% accuracy.”
+- [ ] Submission says “67 tests,” “52 drugs,” “77 rules,” not “100% accuracy.”
 
 ---
 

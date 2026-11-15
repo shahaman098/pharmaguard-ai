@@ -3,7 +3,7 @@
 **Project:** PharmaGuard AI
 **Event:** DSH Hacks V2 (AI × Healthcare)
 **Knowledge base:** v2.0 · 52 medicines · 77 curated rules
-**Test suite:** 53 tests · 53 passing
+**Test suite:** 67 tests · 67 passing
 **Date:** 2026-11-14
 
 > **Scope statement:** This is an engineering verification report, **not** a clinical validation study. The knowledge base is a curated demonstration subset. No sensitivity, specificity, or real-world safety claim is made.
@@ -37,7 +37,7 @@ python3 -m unittest discover tests -v
 Observed:
 
 ```text
-Ran 53 tests in ~0.03s
+Ran 67 tests in ~0.03s
 
 OK
 ```
@@ -109,7 +109,7 @@ This report does **not** establish:
 - OCR accuracy across real-world lighting, curvature, glare, or handwriting;
 - usability with patients or clinicians.
 
-The 53 tests are engineering checks on a small curated set. They are useful for regression and demo credibility, not for regulatory or bedside claims.
+The 67 tests are engineering checks on a small curated set. They are useful for regression and demo credibility, not for regulatory or bedside claims.
 
 ---
 
@@ -135,7 +135,7 @@ python3 -m unittest discover tests -v
 python3 server.py --port 8080
 ```
 
-Expected: 53 tests pass; the app serves at `http://localhost:8080`.
+Expected: 67 tests pass; the app serves at `http://localhost:8080`.
 
 ---
 

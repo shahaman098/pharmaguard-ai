@@ -8,11 +8,11 @@
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
+  <!-- Header: brand, pitch, live knowledge-base stats, pipeline -->
   <header class="navbar">
     <div class="nav-container">
       <div class="brand">
@@ -25,7 +25,7 @@
         </div>
         <div class="brand-text">
           <h1 class="brand-title">PharmaGuard <span class="ai-pill">AI</span></h1>
-          <span class="brand-sub">Prescription safety, timing resolution &amp; clinician handoff</span>
+          <span class="brand-sub">AI reads the label. Rules decide. Every rule is checked against the FDA label, and unknowns are refused, not guessed.</span>
         </div>
       </div>
       <div class="nav-actions">
@@ -33,106 +33,71 @@
           <span class="status-dot"></span>
           <span id="kb-status-text">Local engine online</span>
         </span>
-        <button id="btn-export-sbar" class="btn btn-secondary" type="button">
+        <button id="btn-export-sbar" class="btn btn-secondary btn-sbar" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Export SBAR
+          Export SBAR handoff
         </button>
       </div>
     </div>
+    <ol class="pipeline-strip" aria-label="How PharmaGuard works">
+      <li class="pl-step"><span class="pl-num">1</span><div><strong>Read</strong><span>Label photo → doses</span></div></li>
+      <li class="pl-step"><span class="pl-num">2</span><div><strong>Check</strong><span><b id="pl-rules">77</b> deterministic rules</span></div></li>
+      <li class="pl-step"><span class="pl-num">3</span><div><strong>Cite</strong><span><b id="pl-fda">54/73</b> + <b id="pl-dosing">12</b> dose rules in FDA labels</span></div></li>
+      <li class="pl-step"><span class="pl-num">4</span><div><strong>Resolve</strong><span>Solver spaces clashing doses</span></div></li>
+      <li class="pl-step"><span class="pl-num">5</span><div><strong>Hand off</strong><span>SBAR for the pharmacist</span></div></li>
+      <li class="pl-guard"><span aria-hidden="true">⛔</span><div><strong>Fail-closed</strong><span>Unknown → “not checked”, never “safe”</span></div></li>
+    </ol>
   </header>
 
   <main class="main-container">
-
-    <!-- How it works: perception is AI, decisions are deterministic and sourced -->
-    <section class="pipeline-strip" aria-label="How PharmaGuard works">
-      <div class="pl-step">
-        <span class="pl-icon" aria-hidden="true">📷</span>
-        <div><strong>Read</strong><span>Label photo → drugs &amp; doses, OCR in your browser</span></div>
-      </div>
-      <span class="pl-arrow" aria-hidden="true">→</span>
-      <div class="pl-step">
-        <span class="pl-icon" aria-hidden="true">⚖️</span>
-        <div><strong>Check</strong><span><b id="pl-rules">77</b> deterministic rules, no AI guessing</span></div>
-      </div>
-      <span class="pl-arrow" aria-hidden="true">→</span>
-      <div class="pl-step">
-        <span class="pl-icon" aria-hidden="true">📜</span>
-        <div><strong>Cite</strong><span><b id="pl-fda">54/73</b> rules + <b id="pl-dosing">12</b> kidney/age doses quoted from FDA labels</span></div>
-      </div>
-      <span class="pl-arrow" aria-hidden="true">→</span>
-      <div class="pl-step">
-        <span class="pl-icon" aria-hidden="true">🕒</span>
-        <div><strong>Resolve</strong><span>Constraint solver spaces clashing doses</span></div>
-      </div>
-      <span class="pl-arrow" aria-hidden="true">→</span>
-      <div class="pl-step">
-        <span class="pl-icon" aria-hidden="true">📋</span>
-        <div><strong>Hand off</strong><span>SBAR note for the pharmacist</span></div>
-      </div>
-      <div class="pl-guard"><span aria-hidden="true">🛑</span> Unknown drug or missing kidney value? It says <em>not checked</em>, never “safe”.</div>
-    </section>
-
-    <!-- Patient context -->
-    <section class="patient-bar" aria-label="Patient context">
-      <div class="patient-field">
-        <label for="patient-name">Patient name</label>
-        <input id="patient-name" type="text" value="Jane Doe" maxlength="80" autocomplete="off">
-      </div>
-      <div class="patient-field patient-age">
-        <label for="patient-age">Age</label>
-        <input id="patient-age" type="number" value="74" min="1" max="120">
-      </div>
-      <div class="patient-field patient-kidney">
-        <label for="patient-egfr">eGFR <span class="unit">mL/min/1.73m²</span></label>
-        <input id="patient-egfr" type="number" min="0" max="200" step="1" placeholder="not entered" inputmode="numeric">
-      </div>
-      <div class="patient-field patient-kidney">
-        <label for="patient-crcl">CrCl <span class="unit">Cockcroft-Gault, mL/min</span></label>
-        <input id="patient-crcl" type="number" min="0" max="200" step="1" placeholder="not entered" inputmode="numeric">
-      </div>
-      <p class="patient-hint">Age and kidney function drive FDA-label dosing checks. Labels differ: metformin and allopurinol use eGFR; lithium, the quinolones and others use CrCl. Blank means not checked, never normal. Nothing is stored.</p>
-    </section>
-
-    <!-- Quick Presets Toolbar -->
-    <section class="preset-section">
-      <span class="preset-label">Demo cases:</span>
-      <div class="preset-buttons">
-        <button class="btn-preset active" data-preset="cardiac" type="button">
-          <span class="preset-icon">🚨</span>
-          <strong>Cardiac polypharmacy</strong> — 6 medicines
-        </button>
-        <button class="btn-preset" data-preset="psych" type="button">
-          <span class="preset-icon">⚠️</span>
-          <strong>Serotonin risk</strong> — SSRI + opioid
-        </button>
-        <button class="btn-preset" data-preset="endocrine" type="button">
-          <span class="preset-icon">💊</span>
-          <strong>Thyroid + minerals</strong> — chelation
-        </button>
-        <button class="btn-preset" data-preset="unknown" type="button">
-          <span class="preset-icon">❓</span>
-          <strong>Unverified medicine</strong> — fail-safe demo
-        </button>
-        <button class="btn-preset" data-preset="safe" type="button">
-          <span class="preset-icon">✅</span>
-          <strong>No known interactions</strong>
-        </button>
-        <button class="btn-preset" data-preset="kidney" type="button">
-          <span class="preset-icon">🩺</span>
-          <strong>Kidney patient</strong> — eGFR 28 dosing
-        </button>
-      </div>
-    </section>
 
     <!-- Two-Column Layout -->
     <div class="content-grid">
 
       <!-- Left Column: Patient Regimen Input -->
       <div class="column-left">
-        <div class="panel">
+        <section class="panel patient-panel" aria-label="Patient context">
+          <div class="panel-header">
+            <h2 class="panel-title">Patient</h2>
+            <span class="panel-kicker">Drives kidney &amp; age dosing checks</span>
+          </div>
+          <div class="patient-bar">
+            <div class="patient-field patient-name-field">
+              <label for="patient-name">Name</label>
+              <input id="patient-name" type="text" value="Jane Doe" maxlength="80" autocomplete="off">
+            </div>
+            <div class="patient-field patient-age">
+              <label for="patient-age">Age</label>
+              <input id="patient-age" type="number" value="74" min="1" max="120">
+            </div>
+            <div class="patient-field patient-kidney">
+              <label for="patient-egfr">eGFR <span class="unit">mL/min/1.73m²</span></label>
+              <input id="patient-egfr" type="number" min="0" max="200" step="1" placeholder="not entered" inputmode="numeric">
+            </div>
+            <div class="patient-field patient-kidney">
+              <label for="patient-crcl">CrCl <span class="unit">Cockcroft-Gault</span></label>
+              <input id="patient-crcl" type="number" min="0" max="200" step="1" placeholder="not entered" inputmode="numeric">
+            </div>
+          </div>
+          <p class="patient-hint">Each label names its own measure (metformin: eGFR; lithium: CrCl). Blank = not checked. Nothing is stored.</p>
+        </section>
+
+        <section class="preset-section" aria-label="Demo cases">
+          <span class="preset-label">Demo cases</span>
+          <div class="preset-buttons">
+            <button class="btn-preset active" data-preset="cardiac" type="button"><span class="preset-icon">🚨</span><strong>Cardiac polypharmacy</strong></button>
+            <button class="btn-preset" data-preset="kidney" type="button"><span class="preset-icon">🩺</span><strong>Kidney patient</strong></button>
+            <button class="btn-preset" data-preset="psych" type="button"><span class="preset-icon">⚠️</span><strong>Serotonin risk</strong></button>
+            <button class="btn-preset" data-preset="endocrine" type="button"><span class="preset-icon">💊</span><strong>Thyroid + minerals</strong></button>
+            <button class="btn-preset" data-preset="unknown" type="button"><span class="preset-icon">❓</span><strong>Unknown drug</strong></button>
+            <button class="btn-preset" data-preset="safe" type="button"><span class="preset-icon">✅</span><strong>No interactions</strong></button>
+          </div>
+        </section>
+
+        <div class="panel regimen-panel">
           <div class="panel-header">
             <div class="panel-title-wrap">
-              <h2 class="panel-title">Active Patient Regimen</h2>
+              <h2 class="panel-title">Medicines</h2>
               <span id="med-count-badge" class="badge">0 Medications</span>
             </div>
             <button id="btn-clear-all" class="btn-text" type="button">Clear all</button>
@@ -197,12 +162,13 @@
       <!-- Right Column: Audit Results & Safety Intelligence -->
       <div class="column-right">
 
+        <div class="overview-row">
         <!-- Score & Safety Summary Banner -->
         <div id="safety-score-card" class="score-card score-safe" aria-live="polite">
           <div class="score-visual">
             <div class="score-circle">
               <span id="score-value" class="score-num">100</span>
-              <span class="score-max">/100</span>
+              <span class="score-max">safety index</span>
             </div>
           </div>
           <div class="score-details">
@@ -216,11 +182,20 @@
           </div>
         </div>
 
+        <div id="graph-container" class="graph-container hidden">
+            <div class="graph-header">
+              <h3>Interaction map</h3>
+              <span class="graph-legend"><span class="dot red"></span> Critical <span class="dot amber"></span> Monitor / timing</span>
+            </div>
+            <div id="interaction-graph" class="interaction-graph"></div>
+          </div>
+        </div>
+
         <!-- Navigation Tabs -->
         <div class="tab-bar" role="tablist" aria-label="Audit views">
           <button class="tab-btn active" data-tab="violations" type="button" role="tab" aria-selected="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Alerts &amp; interaction map (<span id="violations-count">0</span>)
+            Alerts (<span id="violations-count">0</span>)
           </button>
           <button class="tab-btn" data-tab="timeline" type="button" role="tab" aria-selected="false">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -234,13 +209,6 @@
 
         <!-- Tab 1: Alerts -->
         <div id="tab-violations" class="tab-pane active" role="tabpanel">
-          <div id="graph-container" class="graph-container hidden">
-            <div class="graph-header">
-              <h3>Interaction map</h3>
-              <span class="graph-legend"><span class="dot red"></span> Critical <span class="dot amber"></span> Monitor / timing</span>
-            </div>
-            <div id="interaction-graph" class="interaction-graph"></div>
-          </div>
           <div id="violations-container" class="violations-container">
             <!-- Dynamic alerts -->
           </div>

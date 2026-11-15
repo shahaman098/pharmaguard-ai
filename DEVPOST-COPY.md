@@ -35,8 +35,9 @@ PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 2. **Screen against a deterministic knowledge base.** 52 medicines and 77 curated rules cover CYP450 interactions, renal clearance, pharmacodynamic synergy, QT prolongation, bleeding, hyperkalemia, and GI chelation. Results are reproducible and auditable.
 3. **Fail closed, not open.** If a medicine is not in the demo knowledge base, the app marks it **UNVERIFIED** and refuses to call the regimen safe. This was a deliberate design choice: a false “safe” is worse than an honest “I don’t know.”
 4. **Resolve timing with a real constraint solver.** A deterministic backtracking scheduler enforces fasting windows, meal alignment, bedtime placement, twice-daily intervals, and 3–4 hour chelation spacing. It reports unresolved conflicts instead of pretending they were fixed.
-5. **Hand off to the care team.** One click generates a structured SBAR draft with the verified interactions, unverified medicines, timing issues, and monitoring recommendations.
-6. **Give the patient an action.** Plain-language advice and a `.ics` calendar export add every scheduled dose to a phone calendar with alarms.
+5. **Dose for this patient's kidneys and age.** Enter eGFR, CrCl or age and 12 FDA-label dosing rules across 9 drugs fire on the label's own thresholds (e.g. metformin contraindicated below eGFR 30, lithium avoided below CrCl 30). Each flag quotes the label word-for-word. eGFR and CrCl are never swapped, and a blank value is reported as “not checked”, never as normal.
+6. **Hand off to the care team.** One click generates a structured SBAR draft with the verified interactions, unverified medicines, timing issues, and monitoring recommendations.
+7. **Give the patient an action.** Plain-language advice and a `.ics` calendar export add every scheduled dose to a phone calendar with alarms.
 
 ### 🛠️ How We Built It
 
@@ -45,7 +46,7 @@ PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 - **Optimization layer:** a backtracking search over interval constraints. The solver checks meal/fasting rules, minimum intra-dose intervals, and interaction-driven spacing, then reports the reasons for every move.
 - **Interface:** a responsive single-page clinical UI with a regimen panel, risk score, interaction map, 24-hour timeline, patient guide, and SBAR modal. Vanilla HTML/CSS/JS — no framework overhead.
 - **API:** a zero-dependency Python HTTP server exposing `/api/audit`, `/api/reschedule`, `/api/sbar`, `/api/drugs`, and `/api/meta`.
-- **Verification:** 53 automated tests covering aliases, high-yield interactions, fail-safe behavior, SBAR structure, scheduler spacing, meal/fasting placement, weekly/PRN handling, label dose overrides, large-regimen fallback, determinism, and day-window bounds.
+- **Verification:** 67 automated tests covering aliases, high-yield interactions, fail-safe behavior, SBAR structure, scheduler spacing, meal/fasting placement, weekly/PRN handling, label dose overrides, large-regimen fallback, determinism, and day-window bounds.
 
 ### 🧗 Challenges We Ran Into
 
@@ -60,7 +61,9 @@ PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 - A genuinely fail-safe audit that surfaces unknown medicines instead of hiding them.
 - A real interval-constraint scheduler with deterministic, testable output.
 - A focused demo knowledge base (52 drugs, 77 rules) that a judge can audit in the repo — **54 of the 73 pairwise rules are confirmed word-for-word in the drug's official FDA label** (openFDA), and every alert quotes that label excerpt with a DailyMed link.
-- 53/53 tests passing with no external Python dependencies.
+- **Patient-specific dosing grounded in FDA labels:** 12 kidney-function and age rules, each quote verified against the live label text at build time, so a threshold cannot drift from its source.
+- A "day at a glance" schedule that re-checks every spacing rule against the solver's actual dose times.
+- 67/67 tests passing with no external Python dependencies.
 
 ### 📚 What We Learned
 
@@ -82,7 +85,7 @@ We used AI coding assistants for scaffolding, test-case synthesis, and documenta
 
 ### 🧪 Verification & Limitations
 
-- **53 automated tests pass** (`python3 -m unittest discover tests -v`).
+- **67 automated tests pass** (`python3 -m unittest discover tests -v`).
 - The tests cover 20+ curated high-yield interaction pairs and scheduler properties.
 - The knowledge base is a **curated demo subset**, not a validated clinical database.
 - This is not a clinical validation study, and the app is not for real clinical use.

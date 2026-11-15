@@ -86,7 +86,8 @@ async function fetchMeta() {
     if (kb.rule_count) $("pl-rules").textContent = kb.rule_count;
     if (ev.counts && ev.pairwise_rules) $("pl-fda").textContent = `${ev.counts.direct || 0}/${ev.pairwise_rules}`;
     if (dosing.rule_count) $("pl-dosing").textContent = dosing.rule_count;
-    $("kb-status-text").textContent = `Local engine · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules${evText}`;
+    $("kb-status-text").textContent = `Engine online · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules`;
+    void evText;
     $("footer-kb").textContent = `Knowledge base v${kb.version || "2.0"} · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules · not for clinical use`;
     if (meta.disclaimer) {
       $("global-disclaimer").textContent = `PharmaGuard AI is an educational prototype. ${meta.disclaimer}`;
@@ -406,6 +407,7 @@ async function runSafetyAudit() {
 
 function resetAuditView() {
   scoreValueEl.textContent = "100";
+  scoreCard.style.setProperty("--score", 100);
   scoreStatusText.textContent = "NO MEDICATIONS TO REVIEW";
   scoreCard.className = "score-card score-safe";
   scoreSummaryMetrics.innerHTML = '<span class="metric-tag green">0 Conflicts</span>';
@@ -423,6 +425,7 @@ function resetAuditView() {
 function updateScoreCard(result) {
   scoreValueEl.textContent = result.safety_score;
   scoreStatusText.textContent = result.overall_status;
+  scoreCard.style.setProperty("--score", Math.max(0, Math.min(100, Number(result.safety_score) || 0)));
 
   scoreCard.className = "score-card";
   if (result.critical_count > 0) {
@@ -491,10 +494,10 @@ function renderEvidenceSummary(list, flags) {
   violationsContainer.appendChild(bar);
 }
 
-function renderPatientChecks(result) {
+function renderPatientChecks(result, part) {
   const checks = result.patient_checks;
   if (!checks) return;
-  (checks.flags || []).forEach((flag) => {
+  if (part === "flags") (checks.flags || []).forEach((flag) => {
     const ev = flag.label_evidence || {};
     const quote = String(ev.quote || "");
     const card = document.createElement("div");
@@ -523,7 +526,7 @@ function renderPatientChecks(result) {
     violationsContainer.appendChild(card);
   });
   const missing = checks.not_checked || [];
-  if (missing.length) {
+  if (part === "note" && missing.length) {
     const byMeasure = {};
     missing.forEach((item) => {
       (byMeasure[item.measure_label] = byMeasure[item.measure_label] || []).push(item.drug);
@@ -543,7 +546,7 @@ function renderViolations(result) {
   const flags = (result.patient_checks && result.patient_checks.flags) || [];
   violationsCountEl.textContent = list.length + flags.length;
   renderEvidenceSummary(list, flags);
-  renderPatientChecks(result);
+  renderPatientChecks(result, "flags");
 
   if (list.length === 0 && flags.length === 0) {
     violationsContainer.insertAdjacentHTML("afterbegin", `
@@ -554,6 +557,7 @@ function renderViolations(result) {
           : "This is not a clinical validation. Keep the pharmacist review."}</p>
       </div>
     `);
+    renderPatientChecks(result, "note");
     return;
   }
 
@@ -582,6 +586,10 @@ function renderViolations(result) {
     `;
     violationsContainer.appendChild(card);
   });
+  // Show the first alert's FDA quote without a click.
+  const firstEvidence = violationsContainer.querySelector(".violation-card:not(.dosing-card) details.label-evidence");
+  if (firstEvidence) firstEvidence.setAttribute("open", "");
+  renderPatientChecks(result, "note");
 }
 
 function labelDate(raw) {
@@ -732,7 +740,7 @@ function renderDayRibbon(schedule) {
   doses.forEach((d) => { if (!drugs.includes(d.drug)) drugs.push(d.drug); });
   const start = 6 * 60, end = 24 * 60;
   const left = 150, right = 22, laneH = 34, top = 30;
-  const width = 600, plotW = width - left - right;
+  const width = 760, plotW = width - left - right;
   const height = top + drugs.length * laneH + 12;
   const x = (m) => left + ((Math.min(Math.max(m, start), end) - start) / (end - start)) * plotW;
 

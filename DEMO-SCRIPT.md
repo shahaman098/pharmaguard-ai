@@ -97,7 +97,7 @@
 
 ### 2:18–2:30 — Proof and close
 
-**On screen:** terminal with `python3 -m unittest discover tests -v` → `Ran 53 tests — OK`, then the GitHub repo, then the title card.
+**On screen:** terminal with `python3 -m unittest discover tests -v` → `Ran 67 tests — OK`, then the GitHub repo, then the title card.
 
 **Narration:**
 “Fifty-three tests cover aliases, high-yield interactions, fail-safe behavior, scheduling constraints, and determinism. The demo knowledge base has 52 medicines and 77 rules. It is open source, zero-Python-dependency, and built for the last mile of medication safety. Thank you.”
@@ -106,7 +106,7 @@
 
 ## Production notes
 
-- **Do not claim** “100% accuracy,” “clinically validated,” or “FDA-approved.” Say “53 tests on a curated demo knowledge base.”
+- **Do not claim** “100% accuracy,” “clinically validated,” or “FDA-approved.” Say “67 tests on a curated demo knowledge base.”
 - **Do not show** features that are not in the build. The current build has OCR intake, the audit, the interaction map, the solver, calendar export, patient advice, and SBAR.
 - Keep the browser at **100–110% zoom** so the UI text is readable at 1080p.
 - Use a real mouse cursor and pause briefly on each result so judges can read it.

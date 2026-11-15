@@ -10,7 +10,7 @@
 |---|---|
 | ![Audit and interaction map](docs/audit-interaction-map.png) | ![Constraint schedule](docs/constraint-schedule.png) |
 
-[![Tests](https://img.shields.io/badge/tests-53%2F53%20passing-brightgreen)](tests/test_safety_engine.py)
+[![Tests](https://img.shields.io/badge/tests-67%2F67%20passing-brightgreen)](tests/test_safety_engine.py)
 [![Knowledge base](https://img.shields.io/badge/demo%20KB-52%20drugs%20%C2%B7%2077%20rules-blue)](#knowledge-base)
 [![Dependencies](https://img.shields.io/badge/python%20deps-zero-success)](#quick-start)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -157,7 +157,7 @@ A `render.yaml` and `Procfile` are included for one-click Render/Railway-style d
 
 ```bash
 python3 -m unittest discover tests -v
-# Ran 53 tests — OK
+# Ran 67 tests — OK
 ```
 
 The suite covers:
@@ -189,7 +189,7 @@ These are engineering tests, **not** a clinical validation study. See [`BENCHMAR
 │   ├── app.js                  # OCR intake, graph, timeline, .ics export
 │   ├── style.css               # responsive clinical design system
 │   └── samples/sample-label.png
-├── tests/test_*.py            # 53 tests
+├── tests/test_*.py            # 67 tests
 ├── DEVPOST-COPY.md             # paste-ready submission story
 ├── DEMO-SCRIPT.md              # 2:30 walkthrough script
 ├── ONE-PAGE-SUMMARY.md/.html   # print-ready one-pager
