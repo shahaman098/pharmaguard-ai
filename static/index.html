@@ -43,6 +43,35 @@
 
   <main class="main-container">
 
+    <!-- How it works: perception is AI, decisions are deterministic and sourced -->
+    <section class="pipeline-strip" aria-label="How PharmaGuard works">
+      <div class="pl-step">
+        <span class="pl-icon" aria-hidden="true">📷</span>
+        <div><strong>Read</strong><span>Label photo → drugs &amp; doses, OCR in your browser</span></div>
+      </div>
+      <span class="pl-arrow" aria-hidden="true">→</span>
+      <div class="pl-step">
+        <span class="pl-icon" aria-hidden="true">⚖️</span>
+        <div><strong>Check</strong><span><b id="pl-rules">77</b> deterministic rules, no AI guessing</span></div>
+      </div>
+      <span class="pl-arrow" aria-hidden="true">→</span>
+      <div class="pl-step">
+        <span class="pl-icon" aria-hidden="true">📜</span>
+        <div><strong>Cite</strong><span><b id="pl-fda">54/73</b> rules + <b id="pl-dosing">12</b> kidney/age doses quoted from FDA labels</span></div>
+      </div>
+      <span class="pl-arrow" aria-hidden="true">→</span>
+      <div class="pl-step">
+        <span class="pl-icon" aria-hidden="true">🕒</span>
+        <div><strong>Resolve</strong><span>Constraint solver spaces clashing doses</span></div>
+      </div>
+      <span class="pl-arrow" aria-hidden="true">→</span>
+      <div class="pl-step">
+        <span class="pl-icon" aria-hidden="true">📋</span>
+        <div><strong>Hand off</strong><span>SBAR note for the pharmacist</span></div>
+      </div>
+      <div class="pl-guard"><span aria-hidden="true">🛑</span> Unknown drug or missing kidney value? It says <em>not checked</em>, never “safe”.</div>
+    </section>
+
     <!-- Patient context -->
     <section class="patient-bar" aria-label="Patient context">
       <div class="patient-field">
@@ -232,6 +261,7 @@
               </button>
             </div>
           </div>
+          <div id="day-ribbon" class="day-ribbon" aria-label="Day at a glance"></div>
           <div id="timeline-container" class="timeline-container">
             <!-- Dynamic schedule groups -->
           </div>

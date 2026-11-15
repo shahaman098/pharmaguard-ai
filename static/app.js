@@ -82,6 +82,10 @@ async function fetchMeta() {
     const kb = meta.knowledge_base || {};
     const ev = kb.label_evidence || {};
     const evText = ev.counts && ev.pairwise_rules ? ` · ${ev.counts.direct || 0}/${ev.pairwise_rules} FDA-label confirmed` : "";
+    const dosing = kb.patient_dosing || {};
+    if (kb.rule_count) $("pl-rules").textContent = kb.rule_count;
+    if (ev.counts && ev.pairwise_rules) $("pl-fda").textContent = `${ev.counts.direct || 0}/${ev.pairwise_rules}`;
+    if (dosing.rule_count) $("pl-dosing").textContent = dosing.rule_count;
     $("kb-status-text").textContent = `Local engine · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules${evText}`;
     $("footer-kb").textContent = `Knowledge base v${kb.version || "2.0"} · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules · not for clinical use`;
     if (meta.disclaimer) {
@@ -459,6 +463,34 @@ function updateScoreCard(result) {
   }
 }
 
+// One line that tells a reviewer how much of what they are reading is sourced.
+function renderEvidenceSummary(list, flags) {
+  const total = list.length + flags.length;
+  if (total === 0) return;
+  const direct = list.filter((i) => (i.label_evidence || {}).tier === "direct").length + flags.length;
+  const classOnly = list.filter((i) => (i.label_evidence || {}).tier === "class").length;
+  const other = total - direct - classOnly;
+  const pct = (n) => `${(n / total) * 100}%`;
+  const bar = document.createElement("div");
+  bar.className = "evidence-summary";
+  bar.innerHTML = `
+    <div class="es-head">
+      <strong>Evidence trail</strong>
+      <span>${direct} of ${total} alert${total === 1 ? "" : "s"} quote the FDA label directly</span>
+    </div>
+    <div class="es-bar" role="img" aria-label="${direct} direct, ${classOnly} class-level, ${other} curated rule only">
+      <span class="es-direct" style="width:${pct(direct)}"></span>
+      <span class="es-class" style="width:${pct(classOnly)}"></span>
+      <span class="es-other" style="width:${pct(other)}"></span>
+    </div>
+    <div class="es-legend">
+      <span><i class="es-direct"></i>FDA label quote (${direct})</span>
+      <span><i class="es-class"></i>Class-level mention (${classOnly})</span>
+      <span><i class="es-other"></i>Curated rule, not in label text (${other})</span>
+    </div>`;
+  violationsContainer.appendChild(bar);
+}
+
 function renderPatientChecks(result) {
   const checks = result.patient_checks;
   if (!checks) return;
@@ -510,6 +542,7 @@ function renderViolations(result) {
   const list = result.interactions || [];
   const flags = (result.patient_checks && result.patient_checks.flags) || [];
   violationsCountEl.textContent = list.length + flags.length;
+  renderEvidenceSummary(list, flags);
   renderPatientChecks(result);
 
   if (list.length === 0 && flags.length === 0) {
@@ -643,9 +676,9 @@ function renderInteractionGraph(result) {
     const label = drug.name.length > 20 ? `${drug.name.slice(0, 18)}…` : drug.name;
     return `
       <g>
-        <circle cx="${pos.x}" cy="${pos.y}" r="25" fill="#ffffff" stroke="${stroke}" stroke-width="2.5"></circle>
-        <text x="${pos.x}" y="${pos.y + 4}" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">${escapeHtml(initials)}</text>
-        <text x="${pos.x}" y="${pos.y + 42}" text-anchor="middle" font-size="11" fill="#475569">${escapeHtml(label)}</text>
+        <circle cx="${pos.x}" cy="${pos.y}" r="28" fill="#ffffff" stroke="${stroke}" stroke-width="3"></circle>
+        <text x="${pos.x}" y="${pos.y + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">${escapeHtml(initials)}</text>
+        <text x="${pos.x}" y="${pos.y + 48}" text-anchor="middle" font-size="15" font-weight="600" fill="#334155">${escapeHtml(label)}</text>
         <title>${escapeHtml(drug.name)}</title>
       </g>
     `;
@@ -687,8 +720,70 @@ async function fetchAndRenderSchedule(auditResult, parentRequestId = auditReques
   }
 }
 
+// Day at a glance: one lane per medicine, plus each spacing rule checked
+// against the solver's actual dose times (computed here, not trusted blindly).
+function renderDayRibbon(schedule) {
+  const host = $("day-ribbon");
+  if (!host) return;
+  const doses = (schedule.doses || []).filter((d) => Number.isFinite(d.minutes));
+  if (doses.length === 0) { host.innerHTML = ""; return; }
+
+  const drugs = [];
+  doses.forEach((d) => { if (!drugs.includes(d.drug)) drugs.push(d.drug); });
+  const start = 6 * 60, end = 24 * 60;
+  const left = 150, right = 22, laneH = 34, top = 30;
+  const width = 600, plotW = width - left - right;
+  const height = top + drugs.length * laneH + 12;
+  const x = (m) => left + ((Math.min(Math.max(m, start), end) - start) / (end - start)) * plotW;
+
+  const ticks = [];
+  for (let h = 6; h <= 24; h += 3) {
+    const tx = x(h * 60);
+    ticks.push(`<line x1="${tx}" y1="${top - 6}" x2="${tx}" y2="${height - 8}" stroke="#e2e8f0"/>
+      <text x="${tx}" y="${top - 12}" text-anchor="middle" font-size="13" fill="#64748b">${String(h % 24).padStart(2, "0")}:00</text>`);
+  }
+  const lanes = drugs.map((drug, i) => {
+    const y = top + i * laneH + laneH / 2;
+    const dots = doses.filter((d) => d.drug === drug).map((d) => {
+      const moved = d.status === "rescheduled";
+      const fill = moved ? "#7c3aed" : "#0369a1";
+      const ring = d.critical_conflict ? `stroke="#dc2626" stroke-width="3"` : "";
+      return `<g><title>${escapeHtml(drug)} ${escapeHtml(d.time)}${moved ? " (moved by solver)" : ""}${d.critical_conflict ? " (critical conflict: needs review)" : ""}</title>
+        <rect x="${x(d.minutes) - 27}" y="${y - 12}" width="54" height="24" rx="12" fill="${fill}" ${ring}/>
+        <text x="${x(d.minutes)}" y="${y + 5}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${escapeHtml(d.time)}</text></g>`;
+    }).join("");
+    const shown = drug.length > 15 ? `${drug.slice(0, 14)}…` : drug;
+    return `<text x="${left - 10}" y="${y + 5}" text-anchor="end" font-size="14" font-weight="600" fill="#0f172a"><title>${escapeHtml(drug)}</title>${escapeHtml(shown)}</text>
+      <line x1="${left}" y1="${y}" x2="${width - right}" y2="${y}" stroke="#f1f5f9" stroke-width="2"/>${dots}`;
+  }).join("");
+
+  // Spacing rules from the audit, verified against the scheduled times.
+  const byKey = {};
+  doses.forEach((d) => { (byKey[d.key] = byKey[d.key] || []).push(d.minutes); });
+  const checks = ((latestAuditResult && latestAuditResult.interactions) || [])
+    .filter((i) => i.spacing_resolvable && i.recommended_spacing_hours > 0 && i.pair_keys)
+    .map((i) => {
+      const [a, b] = i.pair_keys;
+      if (!byKey[a] || !byKey[b]) return null;
+      let gap = Infinity;
+      byKey[a].forEach((ta) => byKey[b].forEach((tb) => { gap = Math.min(gap, Math.abs(ta - tb)); }));
+      const need = i.recommended_spacing_hours * 60;
+      return { label: `${i.drug_a} ↔ ${i.drug_b}`, need, gap, ok: gap >= need };
+    })
+    .filter(Boolean);
+  const fmt = (m) => `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}`;
+  const chips = checks.map((c) => `<span class="rule-chip ${c.ok ? "ok" : "bad"}">${c.ok ? "✓" : "✗"} ${escapeHtml(c.label)}: needs ≥${fmt(c.need)}, scheduled ${fmt(c.gap)} apart</span>`).join("");
+
+  host.innerHTML = `
+    <div class="ribbon-head"><strong>Day at a glance</strong>
+      <span class="ribbon-key"><i style="background:#0369a1"></i>standard <i style="background:#7c3aed"></i>moved for safety <i class="ring"></i>critical conflict — needs review</span></div>
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Daily dose times per medicine">${ticks.join("")}${lanes}</svg>
+    ${chips ? `<div class="rule-chips"><span class="rule-chips-title">Spacing rules checked against these times:</span>${chips}</div>` : ""}`;
+}
+
 function renderTimeline(schedule) {
   timelineContainer.innerHTML = "";
+  renderDayRibbon(schedule);
   const groups = schedule.groups || [];
 
   if (groups.length === 0) {
