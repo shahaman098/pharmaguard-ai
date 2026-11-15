@@ -15,7 +15,7 @@
 | Tests | ✅ 46/46 passing |
 | One-page PDF | ⏳ Print `ONE-PAGE-SUMMARY.html` to PDF |
 | Demo video | ⏳ Record from `DEMO-SCRIPT.md` (2:30 target) |
-| Live demo URL | ⏳ Deploy with `render.yaml` / `Procfile`, then add the URL |
+| Live demo URL | ✅ https://pharmaguard-ai-5jhp.onrender.com |
 | Devpost submission | ⏳ Paste from `DEVPOST-COPY.md` |
 
 ---
@@ -75,6 +75,8 @@ Follow `DEMO-SCRIPT.md`.
 
 ## 4. Deploy a live demo (recommended)
 
+**Deployed:** https://pharmaguard-ai-5jhp.onrender.com — Render, Frankfurt, free tier. Auto-deploys on every push to `main`; `/api/health` returns 200.
+
 The server already binds `0.0.0.0` and reads `$PORT`.
 
 **Render (free tier):**
@@ -121,8 +123,8 @@ Open an incognito window and check:
 - [ ] One-page PDF is readable and one page.
 - [ ] ZIP downloads and contains `server.py`, `pharmaguard/`, `static/`, `tests/`.
 - [ ] No unresolved placeholders like `<YOUR_USERNAME>` or `[TODO]` in the submission copy. (Local `localhost` run commands are fine.)
-- [ ] Fill or remove the **Live demo** and **Video** lines at the top of `DEVPOST-COPY.md`.
-- [ ] Live demo URL works (if deployed).
+- [x] Fill or remove the **Live demo** and **Video** lines at the top of `DEVPOST-COPY.md`.
+- [x] Live demo URL works (if deployed): https://pharmaguard-ai-5jhp.onrender.com
 - [ ] Submission says “46 tests,” “52 drugs,” “77 rules,” not “100% accuracy.”
 
 ---
