@@ -18,6 +18,7 @@ from .interactions import (
     DUPLICATE_CLASS_RULES,
     INTERACTION_RULES,
     KNOWLEDGE_BASE_META,
+    label_evidence_for,
 )
 
 # Words that add no drug-identification value when users paste label text.
@@ -281,8 +282,10 @@ class ClinicalSafetyEngine:
         self, rule: Dict[str, Any], first: str, second: str
     ) -> Dict[str, Any]:
         pair = rule.get("pair")
+        rule_id = f"{pair[0]}+{pair[1]}" if pair else f"{first}+{second}"
         return {
-            "rule_id": f"{pair[0]}+{pair[1]}" if pair else f"{first}+{second}",
+            "rule_id": rule_id,
+            "label_evidence": label_evidence_for(rule_id) if pair else {"tier": "class_rule"},
             "drug_a": self.registry[first]["name"],
             "drug_b": self.registry[second]["name"],
             "pair_keys": (first, second),

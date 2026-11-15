@@ -16,7 +16,7 @@ Most tools stop at a generic warning. They do not resolve the timing, and they d
 PharmaGuard AI closes the last mile:
 
 1. **Read the regimen from a label photo.** LSTM-based browser OCR proposes medicines and doses; the user confirms. Images never leave the device.
-2. **Screen deterministically.** A 52-drug, 77-rule demo knowledge base covers CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia, and GI chelation. Outputs are reproducible and auditable.
+2. **Screen deterministically.** A 52-drug, 77-rule demo knowledge base covers CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia, and GI chelation. Outputs are reproducible and auditable. 54 of the 73 pairwise rules are confirmed word-for-word in official FDA labels (openFDA), quoted on every alert.
 3. **Fail closed.** Medicines outside the knowledge base are marked **UNVERIFIED**; the app refuses to call the regimen safe. Coverage is shown explicitly.
 4. **Resolve timing with a real solver.** A backtracking constraint search enforces fasting windows, meals, bedtime, BID intervals, and 3–4 hour chelation spacing. It reports unresolved conflicts instead of hiding them.
 5. **Hand off.** One-click SBAR draft for pharmacist review, plain-language patient advice, and a `.ics` calendar export with dose alarms.
@@ -40,7 +40,7 @@ Label photo → browser OCR → human confirmation → /api/audit
 
 ## 4. Verification
 
-- **46/46 automated tests pass** (`python3 -m unittest discover tests -v`).
+- **53/53 automated tests pass** (`python3 -m unittest discover tests -v`).
 - Coverage includes 20+ high-yield interaction pairs, alias regressions, unknown-drug fail-safe behavior, SBAR structure, chelation spacing, fasting/meal/bedtime placement, weekly/PRN handling, determinism, and day-window bounds.
 - The suite is an engineering check on a curated demo set — **not** a clinical validation study.
 

@@ -45,7 +45,7 @@ PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 - **Optimization layer:** a backtracking search over interval constraints. The solver checks meal/fasting rules, minimum intra-dose intervals, and interaction-driven spacing, then reports the reasons for every move.
 - **Interface:** a responsive single-page clinical UI with a regimen panel, risk score, interaction map, 24-hour timeline, patient guide, and SBAR modal. Vanilla HTML/CSS/JS — no framework overhead.
 - **API:** a zero-dependency Python HTTP server exposing `/api/audit`, `/api/reschedule`, `/api/sbar`, `/api/drugs`, and `/api/meta`.
-- **Verification:** 46 automated tests covering aliases, high-yield interactions, fail-safe behavior, SBAR structure, scheduler spacing, meal/fasting placement, weekly/PRN handling, label dose overrides, large-regimen fallback, determinism, and day-window bounds.
+- **Verification:** 53 automated tests covering aliases, high-yield interactions, fail-safe behavior, SBAR structure, scheduler spacing, meal/fasting placement, weekly/PRN handling, label dose overrides, large-regimen fallback, determinism, and day-window bounds.
 
 ### 🧗 Challenges We Ran Into
 
@@ -59,8 +59,8 @@ PharmaGuard AI is an end-to-end prescription-safety co-pilot:
 - A complete, working loop: **label photo → verified regimen → interaction map → rescheduled timeline → calendar export → SBAR draft.**
 - A genuinely fail-safe audit that surfaces unknown medicines instead of hiding them.
 - A real interval-constraint scheduler with deterministic, testable output.
-- A focused demo knowledge base (52 drugs, 77 rules) that a judge can audit in the repo.
-- 46/46 tests passing with no external Python dependencies.
+- A focused demo knowledge base (52 drugs, 77 rules) that a judge can audit in the repo — **54 of the 73 pairwise rules are confirmed word-for-word in the drug's official FDA label** (openFDA), and every alert quotes that label excerpt with a DailyMed link.
+- 53/53 tests passing with no external Python dependencies.
 
 ### 📚 What We Learned
 
@@ -82,7 +82,7 @@ We used AI coding assistants for scaffolding, test-case synthesis, and documenta
 
 ### 🧪 Verification & Limitations
 
-- **46 automated tests pass** (`python3 -m unittest discover tests -v`).
+- **53 automated tests pass** (`python3 -m unittest discover tests -v`).
 - The tests cover 20+ curated high-yield interaction pairs and scheduler properties.
 - The knowledge base is a **curated demo subset**, not a validated clinical database.
 - This is not a clinical validation study, and the app is not for real clinical use.

@@ -10,7 +10,7 @@
 |---|---|
 | ![Audit and interaction map](docs/audit-interaction-map.png) | ![Constraint schedule](docs/constraint-schedule.png) |
 
-[![Tests](https://img.shields.io/badge/tests-46%2F46%20passing-brightgreen)](tests/test_safety_engine.py)
+[![Tests](https://img.shields.io/badge/tests-53%2F53%20passing-brightgreen)](tests/test_safety_engine.py)
 [![Knowledge base](https://img.shields.io/badge/demo%20KB-52%20drugs%20%C2%B7%2077%20rules-blue)](#knowledge-base)
 [![Dependencies](https://img.shields.io/badge/python%20deps-zero-success)](#quick-start)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -40,6 +40,7 @@ Most tools stop at a generic warning. PharmaGuard closes the loop:
 |---|---|
 | **Multimodal intake** | Upload a prescription-label photo. Tesseract.js (an LSTM-based OCR engine) loads on demand and runs locally in the browser, then the app proposes medicines and doses for human confirmation. Confirmed label doses flow into the audit, schedule, and SBAR. No image is uploaded. |
 | **Fail-safe audit** | 52-drug demo knowledge base and 77 curated rules covering CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia, and GI chelation. **Unknown drugs are marked UNVERIFIED — never “safe.”** |
+| **FDA label evidence** | Every pairwise rule is checked against the official FDA label of both drugs via the public openFDA drug label API. 54/73 are confirmed by a direct mention, 11 by a class-level mention only, 8 not found — shown honestly on each alert with the quoted excerpt and a DailyMed link. Rebuild with `python3 tools/build_label_evidence.py`; the cache is committed, so the app runs offline. |
 | **Constraint solver** | A deterministic backtracking scheduler enforces fasting windows, meal alignment, bedtime placement, twice-daily intervals, and 3–4 hour chelation spacing. Weekly and as-needed medicines are kept out of the daily timeline. |
 | **Clinician handoff** | Generates an SBAR draft with the verified interactions, unverified medicines, timing issues, and explicit monitoring recommendations. |
 | **Patient action** | Plain-language advice plus a one-click `.ics` export so every scheduled dose can be added to a phone calendar with alarms. |
@@ -92,7 +93,8 @@ The AI is deliberately split from the clinical decision layer:
 ## Knowledge base
 
 - **52 medicines**, including generics, common US brands, and aliases.
-- **77 rules**: pairwise interactions plus therapeutic-duplication checks.
+- **77 rules**: 73 pairwise interactions plus 4 therapeutic-duplication checks.
+- **FDA label evidence**: 54/73 pairwise rules directly confirmed in openFDA labels (11 class-level only, 8 not found; automated matches reviewed by hand, with false positives rejected).
 - Curated from **FDA-approved prescribing information**, RxNorm-style naming, and standard pharmacology references.
 - Coverage includes:
   - bleeding: warfarin + NSAIDs / aspirin
@@ -155,7 +157,7 @@ A `render.yaml` and `Procfile` are included for one-click Render/Railway-style d
 
 ```bash
 python3 -m unittest discover tests -v
-# Ran 46 tests — OK
+# Ran 53 tests — OK
 ```
 
 The suite covers:
@@ -187,7 +189,7 @@ These are engineering tests, **not** a clinical validation study. See [`BENCHMAR
 │   ├── app.js                  # OCR intake, graph, timeline, .ics export
 │   ├── style.css               # responsive clinical design system
 │   └── samples/sample-label.png
-├── tests/test_safety_engine.py # 46 tests
+├── tests/test_*.py            # 53 tests
 ├── DEVPOST-COPY.md             # paste-ready submission story
 ├── DEMO-SCRIPT.md              # 2:30 walkthrough script
 ├── ONE-PAGE-SUMMARY.md/.html   # print-ready one-pager

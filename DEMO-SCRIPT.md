@@ -52,7 +52,7 @@
 4. Open the Warfarin + Ibuprofen card and the Ciprofloxacin + Calcium card.
 
 **Narration:**
-“The deterministic engine finds two critical interactions: warfarin plus ibuprofen, a severe bleeding risk, and simvastatin plus clarithromycin, a CYP3A4-driven rhabdomyolysis risk. It also catches three timing or monitoring issues, including calcium chelating ciprofloxacin. Every alert has a mechanism, a clinical action, and a source.”
+“The deterministic engine finds two critical interactions: warfarin plus ibuprofen, a severe bleeding risk, and simvastatin plus clarithromycin, a CYP3A4-driven rhabdomyolysis risk. It also catches three timing or monitoring issues, including calcium chelating ciprofloxacin. Every alert has a mechanism, a clinical action, and — for 54 of the 73 pairwise rules — the exact sentence from the official FDA label, pulled from openFDA, with a link to DailyMed.”
 
 ### 1:05–1:30 — Resolve the schedule
 
@@ -97,16 +97,16 @@
 
 ### 2:18–2:30 — Proof and close
 
-**On screen:** terminal with `python3 -m unittest discover tests -v` → `Ran 46 tests — OK`, then the GitHub repo, then the title card.
+**On screen:** terminal with `python3 -m unittest discover tests -v` → `Ran 53 tests — OK`, then the GitHub repo, then the title card.
 
 **Narration:**
-“Forty-six tests cover aliases, high-yield interactions, fail-safe behavior, scheduling constraints, and determinism. The demo knowledge base has 52 medicines and 77 rules. It is open source, zero-Python-dependency, and built for the last mile of medication safety. Thank you.”
+“Fifty-three tests cover aliases, high-yield interactions, fail-safe behavior, scheduling constraints, and determinism. The demo knowledge base has 52 medicines and 77 rules. It is open source, zero-Python-dependency, and built for the last mile of medication safety. Thank you.”
 
 ---
 
 ## Production notes
 
-- **Do not claim** “100% accuracy,” “clinically validated,” or “FDA-approved.” Say “46 tests on a curated demo knowledge base.”
+- **Do not claim** “100% accuracy,” “clinically validated,” or “FDA-approved.” Say “53 tests on a curated demo knowledge base.”
 - **Do not show** features that are not in the build. The current build has OCR intake, the audit, the interaction map, the solver, calendar export, patient advice, and SBAR.
 - Keep the browser at **100–110% zoom** so the UI text is readable at 1080p.
 - Use a real mouse cursor and pause briefly on each result so judges can read it.

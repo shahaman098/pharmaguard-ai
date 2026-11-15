@@ -9,6 +9,8 @@ Design principle: fail closed. A medication that is not in the registry must be
 surfaced as UNVERIFIED rather than silently treated as safe.
 """
 
+import json
+from pathlib import Path
 from typing import Any, Dict, List
 
 KNOWLEDGE_BASE_VERSION = "2.0"
@@ -1162,6 +1164,22 @@ DUPLICATE_CLASS_RULES: List[Dict[str, Any]] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# FDA label evidence (built offline by tools/build_label_evidence.py from the
+# public openFDA drug label API; cached so runtime never touches the network).
+# ---------------------------------------------------------------------------
+_EVIDENCE_PATH = Path(__file__).with_name("label_evidence.json")
+try:
+    LABEL_EVIDENCE: Dict[str, Any] = json.loads(_EVIDENCE_PATH.read_text(encoding="utf-8"))
+except (OSError, ValueError):
+    LABEL_EVIDENCE = {"rules": {}, "counts": {}, "labels": {}}
+
+
+def label_evidence_for(rule_id: str) -> Dict[str, Any]:
+    """Returns the FDA-label evidence record for a pairwise rule id ("a+b")."""
+    return LABEL_EVIDENCE.get("rules", {}).get(rule_id, {"tier": "not_found"})
+
+
 KNOWLEDGE_BASE_META = {
     "version": KNOWLEDGE_BASE_VERSION,
     "last_updated": KNOWLEDGE_BASE_UPDATED,
@@ -1174,4 +1192,11 @@ KNOWLEDGE_BASE_META = {
         "pharmacodynamic synergy, and GI chelation",
     ],
     "disclaimer": DISCLAIMER,
+    "label_evidence": {
+        "source": LABEL_EVIDENCE.get("source", "openFDA drug label API"),
+        "retrieved": LABEL_EVIDENCE.get("retrieved", ""),
+        "pairwise_rules": LABEL_EVIDENCE.get("rule_count", len(INTERACTION_RULES)),
+        "counts": LABEL_EVIDENCE.get("counts", {}),
+        "labels_matched": sum(1 for v in LABEL_EVIDENCE.get("labels", {}).values() if v),
+    },
 }

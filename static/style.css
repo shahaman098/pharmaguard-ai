@@ -1345,3 +1345,18 @@ body {
 .note-card.critical-conflicts { background: #fef2f2; border-color: #fecaca; }
 .note-card.critical-conflicts h4 { color: #991b1b; }
 .note-card.critical-conflicts p { font-size: 0.78rem; color: #7f1d1d; margin-bottom: 5px; }
+
+/* FDA label evidence */
+.label-evidence { margin-top: 10px; border-radius: 8px; font-size: 0.85rem; padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; }
+.label-evidence summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; list-style: none; }
+.label-evidence summary::-webkit-details-marker { display: none; }
+.label-evidence .ev-badge { font-weight: 700; }
+.label-evidence .ev-meta { color: #64748b; }
+.label-evidence.ev-direct { border-color: #86efac; background: #f0fdf4; }
+.label-evidence.ev-direct .ev-badge { color: #15803d; }
+.label-evidence.ev-class { border-color: #fde68a; background: #fffbeb; }
+.label-evidence.ev-class .ev-badge { color: #b45309; }
+.label-evidence.ev-none .ev-badge { color: #64748b; margin-right: 8px; }
+.label-evidence blockquote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid #cbd5e1; background: #fff; color: #334155; font-size: 0.82rem; line-height: 1.5; }
+.label-evidence mark { background: #fef08a; padding: 0 2px; border-radius: 2px; }
+.label-evidence a { color: #0f766e; font-weight: 600; }

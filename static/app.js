@@ -73,7 +73,9 @@ async function fetchMeta() {
     const res = await fetch("/api/meta");
     const meta = await res.json();
     const kb = meta.knowledge_base || {};
-    $("kb-status-text").textContent = `Local engine · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules`;
+    const ev = kb.label_evidence || {};
+    const evText = ev.counts && ev.pairwise_rules ? ` · ${ev.counts.direct || 0}/${ev.pairwise_rules} FDA-label confirmed` : "";
+    $("kb-status-text").textContent = `Local engine · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules${evText}`;
     $("footer-kb").textContent = `Knowledge base v${kb.version || "2.0"} · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules · not for clinical use`;
     if (meta.disclaimer) {
       $("global-disclaimer").textContent = `PharmaGuard AI is an educational prototype. ${meta.disclaimer}`;
@@ -457,10 +459,45 @@ function renderViolations(result) {
         <span class="action-label">Clinical action:</span>
         <span>${escapeHtml(item.clinical_action)}</span>
       </div>
-      <div class="violation-source">Source: ${escapeHtml(item.source || "FDA-approved labeling")}</div>
+      ${renderLabelEvidence(item)}
     `;
     violationsContainer.appendChild(card);
   });
+}
+
+function labelDate(raw) {
+  const t = String(raw || "");
+  return t.length === 8 ? `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6)}` : t;
+}
+
+// FDA label evidence: only a direct mention counts as corroboration. Class-level
+// mentions and misses are shown honestly and never change the alert severity.
+function renderLabelEvidence(item) {
+  const ev = item.label_evidence || {};
+  if (ev.tier === "direct" || ev.tier === "class") {
+    const direct = ev.tier === "direct";
+    const label = `${ev.generic_name || ""}${ev.brand_name ? ` (${ev.brand_name})` : ""}`;
+    const excerpt = String(ev.excerpt || "");
+    const matched = String(ev.matched || "");
+    const idx = excerpt.toLowerCase().indexOf(matched.toLowerCase());
+    const quote = idx >= 0 && matched
+      ? `${escapeHtml(excerpt.slice(0, idx))}<mark>${escapeHtml(excerpt.slice(idx, idx + matched.length))}</mark>${escapeHtml(excerpt.slice(idx + matched.length))}`
+      : escapeHtml(excerpt);
+    return `
+      <details class="label-evidence ${direct ? "ev-direct" : "ev-class"}">
+        <summary>
+          <span class="ev-badge">${direct ? "✓ FDA label confirms" : "◐ FDA label: class-level mention only"}</span>
+          <span class="ev-meta">${escapeHtml(label)} label · effective ${escapeHtml(labelDate(ev.effective_time))}</span>
+        </summary>
+        <blockquote>${quote}</blockquote>
+        <a href="${escapeHtml(ev.dailymed_url || "#")}" target="_blank" rel="noopener">Open the label on DailyMed ↗</a>
+      </details>`;
+  }
+  if (ev.tier === "not_found") {
+    return `<div class="label-evidence ev-none"><span class="ev-badge">○ Not found in the searched FDA label sections</span>
+      <span class="ev-meta">Rule kept from curated pharmacology references${ev.review_note ? ` · reviewer note: ${escapeHtml(ev.review_note)}` : ""}</span></div>`;
+  }
+  return `<div class="violation-source">Source: ${escapeHtml(item.source || "Curated duplicate-therapy rule")}</div>`;
 }
 
 // ---------------------------------------------------------------------------

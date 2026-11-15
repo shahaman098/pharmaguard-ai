@@ -111,7 +111,7 @@
   <h2>The solution</h2>
   <ol>
     <li><strong>Read the regimen from a label photo.</strong> LSTM-based browser OCR proposes medicines and doses; the user confirms. Images never leave the device.</li>
-    <li><strong>Screen deterministically.</strong> A 52-drug, 77-rule demo knowledge base covers CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia, and GI chelation.</li>
+    <li><strong>Screen deterministically.</strong> A 52-drug, 77-rule demo knowledge base covers CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia, and GI chelation. <strong>54 of 73 pairwise rules are confirmed word-for-word in the official FDA label</strong> (openFDA), quoted on every alert with a DailyMed link.</li>
     <li><strong>Fail closed.</strong> Medicines outside the knowledge base are marked <strong>UNVERIFIED</strong>; the app refuses to call the regimen safe and shows coverage explicitly.</li>
     <li><strong>Resolve timing with a real solver.</strong> A backtracking constraint search enforces fasting windows, meals, bedtime, BID intervals, and 3–4 hour chelation spacing. Unresolved conflicts are reported.</li>
     <li><strong>Hand off.</strong> One-click SBAR draft for pharmacist review, plain-language patient advice, and a <code>.ics</code> calendar export with dose alarms.</li>
@@ -132,15 +132,15 @@
   <div class="stats">
     <div class="stat"><strong>52</strong><span>medicines</span></div>
     <div class="stat"><strong>77</strong><span>curated rules</span></div>
-    <div class="stat"><strong>46/46</strong><span>tests passing</span></div>
-    <div class="stat"><strong>0</strong><span>Python dependencies</span></div>
+    <div class="stat"><strong>53/53</strong><span>tests passing</span></div>
+    <div class="stat"><strong>54/73</strong><span>rules confirmed in FDA labels</span></div>
   </div>
 
   <div class="two-col">
     <div>
       <h2>Verification</h2>
       <ul>
-        <li><span class="ok">46/46 tests pass</span> with <code>python3 -m unittest discover tests -v</code>.</li>
+        <li><span class="ok">53/53 tests pass</span> with <code>python3 -m unittest discover tests -v</code>.</li>
         <li>20+ high-yield interaction pairs, alias regressions, unknown-drug fail-safe behavior, SBAR structure.</li>
         <li>Chelation spacing, fasting/meal/bedtime placement, weekly/PRN handling, determinism, day-window bounds.</li>
         <li>Engineering verification on a curated demo set — <strong>not</strong> a clinical validation study.</li>

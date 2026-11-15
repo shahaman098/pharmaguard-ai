@@ -56,7 +56,7 @@ Copy the full text from `DEVPOST-COPY.md` → “Full Markdown Description.”
 
 **Q: How does the project address the AI × Healthcare theme?**
 
-A: PharmaGuard uses AI for perception — browser OCR reads a prescription-label photo and proposes medicines and doses for human confirmation. The safety decisions are deliberately deterministic: a 52-drug, 77-rule engine screens for CYP450, renal, pharmacodynamic, QT, bleeding, hyperkalemia, and chelation risks, then a backtracking constraint solver builds a safe 24-hour schedule. The clinician handoff is an SBAR draft for pharmacist review.
+A: PharmaGuard uses AI for perception — browser OCR reads a prescription-label photo and proposes medicines and doses for human confirmation. The safety decisions are deliberately deterministic: a 52-drug, 77-rule engine screens for CYP450, renal, pharmacodynamic, QT, bleeding, hyperkalemia, and chelation risks, then a backtracking constraint solver builds a safe 24-hour schedule. The clinician handoff is an SBAR draft for pharmacist review. Each rule is grounded in public data: 54 of the 73 pairwise rules are confirmed by a direct mention in the official FDA label (openFDA drug label API), and the app quotes the label excerpt on every alert.
 
 **Q: Did you build this during the hackathon period?**
 
@@ -72,7 +72,7 @@ A: The Python server uses only the standard library. The browser loads Tesseract
 
 **Q: How was the project validated?**
 
-A: 46 automated tests pass, covering alias resolution, 20+ high-yield interaction pairs, unknown-drug fail-safe behavior, SBAR structure, chelation spacing, fasting/meal/bedtime placement, weekly/PRN handling, label dose overrides, large-regimen fallback, determinism, and day-window bounds. This is engineering verification on a curated demo set — not a clinical validation study. The limitations are stated in `BENCHMARK-REPORT.md`.
+A: 53 automated tests pass, covering alias resolution, 20+ high-yield interaction pairs, unknown-drug fail-safe behavior, SBAR structure, chelation spacing, fasting/meal/bedtime placement, weekly/PRN handling, label dose overrides, large-regimen fallback, determinism, and day-window bounds. This is engineering verification on a curated demo set — not a clinical validation study. The limitations are stated in `BENCHMARK-REPORT.md`.
 
 **Q: Is this safe to use for real patients?**
 
@@ -92,5 +92,5 @@ A: A licensed interaction dataset, clinician-adjudicated validation, FHIR medica
 - [ ] Source ZIP contains `server.py`, `pharmaguard/`, `static/`, `tests/`.
 - [ ] No unresolved placeholders (`<YOUR_USERNAME>`, `[TODO]`) in the writeup. (Local `localhost` run commands are fine.)
 - [ ] Fill or remove the **Live demo** and **Video** lines in `DEVPOST-COPY.md`.
-- [ ] Claims match the build: 46 tests, 52 drugs, 77 rules, no “100% accuracy.”
+- [ ] Claims match the build: 53 tests, 52 drugs, 77 rules, no “100% accuracy.”
 - [ ] Submission saved and confirmed.
