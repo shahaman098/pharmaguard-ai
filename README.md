@@ -6,6 +6,10 @@
 
 ![PharmaGuard AI](thumbnail.png)
 
+| Audit + interaction map | Constraint-solved 24-hour schedule |
+|---|---|
+| ![Audit and interaction map](docs/audit-interaction-map.png) | ![Constraint schedule](docs/constraint-schedule.png) |
+
 [![Tests](https://img.shields.io/badge/tests-46%2F46%20passing-brightgreen)](tests/test_safety_engine.py)
 [![Knowledge base](https://img.shields.io/badge/demo%20KB-52%20drugs%20%C2%B7%2077%20rules-blue)](#knowledge-base)
 [![Dependencies](https://img.shields.io/badge/python%20deps-zero-success)](#quick-start)

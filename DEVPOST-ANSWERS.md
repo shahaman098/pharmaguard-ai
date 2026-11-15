@@ -45,8 +45,8 @@ Copy the full text from `DEVPOST-COPY.md` → “Full Markdown Description.”
 ### Links & URLs
 
 - **GitHub Repository:** https://github.com/shahaman098/pharmaguard-ai
-- **Demo Video:** _(paste your unlisted YouTube/Vimeo URL)_
-- **Live Demo:** _(paste your deployed URL, if available)_
+- **Demo Video:** the YouTube/Vimeo link entered in the Devpost Video field
+- **Live Demo:** run locally with `python3 server.py` (Render blueprint included in `render.yaml`)
 - **One-Pager PDF:** attach `PharmaGuard-AI-One-Page-Summary.pdf`
 - **Source ZIP:** attach `dsh-hacks-v2-submission.zip`
 

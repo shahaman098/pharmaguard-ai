@@ -58,7 +58,7 @@ Label photo → browser OCR → human confirmation → /api/audit
 - The scheduler optimizes timing, not renal/hepatic dosing or indication appropriateness.
 - Not for real clinical use.
 
-## 7. Why it can win
+## 7. Why it matters
 
 A complete, working loop with a defensible safety architecture: **multimodal intake → deterministic interaction detection → real constraint-based resolution → patient and clinician artifacts.** It is honest about its limits, and every claim in the submission is reproducible from the repository.
 

@@ -10,7 +10,7 @@
 
 ## Abstract
 
-Polypharmacy creates a last-mile safety problem: interaction alerts are common, but **timing resolution and clinician handoff are rare**. PharmaGuard AI explores a safety-first architecture in which AI is used only for perception (label OCR), while interaction detection and scheduling are deterministic and auditable. The prototype combines a 52-drug, 77-rule knowledge base, a fail-closed unknown-medication policy, a backtracking interval-constraint scheduler, and two artifacts (an SBAR draft and a calendar export). We evaluate the artifact with 45 engineering tests covering interaction detection, alias resolution, fail-safe behavior, and scheduling properties. We report the scope and limitations explicitly and outline the clinical validation work required before any real-world use.
+Polypharmacy creates a last-mile safety problem: interaction alerts are common, but **timing resolution and clinician handoff are rare**. PharmaGuard AI explores a safety-first architecture in which AI is used only for perception (label OCR), while interaction detection and scheduling are deterministic and auditable. The prototype combines a 52-drug, 77-rule knowledge base, a fail-closed unknown-medication policy, a backtracking interval-constraint scheduler, and two artifacts (an SBAR draft and a calendar export). We evaluate the artifact with 46 engineering tests covering interaction detection, alias resolution, fail-safe behavior, and scheduling properties. We report the scope and limitations explicitly and outline the clinical validation work required before any real-world use.
 
 ---
 

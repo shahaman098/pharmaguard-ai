@@ -23,7 +23,7 @@
 ## 1. Verify the app locally
 
 ```bash
-cd "/Users/krishshah/Hackathons/DSH Hacks V2"
+cd pharmaguard-ai   # or wherever you cloned the repo
 
 # 1. Tests
 python3 -m unittest discover tests -v
