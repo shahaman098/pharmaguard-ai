@@ -1180,6 +1180,16 @@ def label_evidence_for(rule_id: str) -> Dict[str, Any]:
     return LABEL_EVIDENCE.get("rules", {}).get(rule_id, {"tier": "not_found"})
 
 
+# Kidney-function and age dosing rules, each quoted word-for-word from an FDA
+# label (built offline by tools/build_renal_evidence.py).
+_RENAL_PATH = Path(__file__).with_name("renal_evidence.json")
+try:
+    RENAL_EVIDENCE: Dict[str, Any] = json.loads(_RENAL_PATH.read_text(encoding="utf-8"))
+except (OSError, ValueError):
+    RENAL_EVIDENCE = {"rules": []}
+RENAL_RULES: List[Dict[str, Any]] = RENAL_EVIDENCE.get("rules", [])
+
+
 KNOWLEDGE_BASE_META = {
     "version": KNOWLEDGE_BASE_VERSION,
     "last_updated": KNOWLEDGE_BASE_UPDATED,
@@ -1198,5 +1208,10 @@ KNOWLEDGE_BASE_META = {
         "pairwise_rules": LABEL_EVIDENCE.get("rule_count", len(INTERACTION_RULES)),
         "counts": LABEL_EVIDENCE.get("counts", {}),
         "labels_matched": sum(1 for v in LABEL_EVIDENCE.get("labels", {}).values() if v),
+    },
+    "patient_dosing": {
+        "rule_count": len(RENAL_RULES),
+        "drugs": sorted({rule["drug"] for rule in RENAL_RULES}),
+        "retrieved": RENAL_EVIDENCE.get("retrieved", ""),
     },
 }

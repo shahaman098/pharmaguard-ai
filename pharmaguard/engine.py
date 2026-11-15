@@ -18,8 +18,50 @@ from .interactions import (
     DUPLICATE_CLASS_RULES,
     INTERACTION_RULES,
     KNOWLEDGE_BASE_META,
+    RENAL_RULES,
     label_evidence_for,
 )
+
+MEASURE_LABELS = {
+    "egfr": "eGFR (mL/min/1.73 m²)",
+    "crcl": "CrCl, Cockcroft-Gault (mL/min)",
+    "age": "Age (years)",
+}
+PATIENT_LIMITS = {"age": (0, 120), "egfr": (0, 200), "crcl": (0, 200)}
+
+
+def parse_patient(raw: Any) -> Tuple[Optional[Dict[str, Optional[float]]], Optional[str]]:
+    """Validates patient context. Blank values mean "not provided", never "normal"."""
+    if raw is None:
+        return None, None
+    if not isinstance(raw, dict):
+        return None, "patient must be an object"
+    patient: Dict[str, Optional[float]] = {}
+    for field, (low, high) in PATIENT_LIMITS.items():
+        value = raw.get(field)
+        if value is None or (isinstance(value, str) and not value.strip()):
+            patient[field] = None
+            continue
+        if isinstance(value, bool):
+            return None, f"patient.{field} must be a number"
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None, f"patient.{field} must be a number"
+        if number != number or not low <= number <= high:
+            return None, f"patient.{field} must be between {low} and {high}"
+        patient[field] = number
+    return patient, None
+
+
+def _rule_applies(rule: Dict[str, Any], value: float) -> bool:
+    checks = {
+        "lt": lambda bound: value < bound,
+        "le": lambda bound: value <= bound,
+        "gt": lambda bound: value > bound,
+        "ge": lambda bound: value >= bound,
+    }
+    return all(check(rule[key]) for key, check in checks.items() if key in rule)
 
 # Words that add no drug-identification value when users paste label text.
 _NOISE_WORDS = {
@@ -145,6 +187,7 @@ class ClinicalSafetyEngine:
         self,
         drug_list: List[str],
         dose_overrides: Optional[Dict[str, str]] = None,
+        patient: Optional[Dict[str, Optional[float]]] = None,
     ) -> Dict[str, Any]:
         """Run a comprehensive safety audit over a list of medication names.
 
@@ -207,8 +250,17 @@ class ClinicalSafetyEngine:
             )
         )
 
-        critical_count = sum(1 for item in interactions if item["severity"] == "CRITICAL")
-        moderate_count = sum(1 for item in interactions if item["severity"] == "MODERATE")
+        patient_checks = (
+            self._patient_checks(normalized_keys, patient) if patient is not None else None
+        )
+        patient_flags = patient_checks["flags"] if patient_checks else []
+
+        critical_count = sum(
+            1 for item in interactions + patient_flags if item["severity"] == "CRITICAL"
+        )
+        moderate_count = sum(
+            1 for item in interactions + patient_flags if item["severity"] == "MODERATE"
+        )
 
         penalty = (critical_count * 35) + (moderate_count * 12)
         safety_score = max(5, 100 - penalty)
@@ -253,7 +305,7 @@ class ClinicalSafetyEngine:
             for key in normalized_keys
         ]
 
-        return {
+        result = {
             "total_medications": total_medications,
             "verified_count": len(normalized_keys),
             "unverified_count": len(unknown_drugs),
@@ -270,6 +322,63 @@ class ClinicalSafetyEngine:
             "patient_summary": self._generate_patient_summary(interactions, unknown_drugs),
             "knowledge_base": self.meta,
             "disclaimer": DISCLAIMER,
+        }
+        if patient_checks is not None:
+            result["patient_checks"] = patient_checks
+        return result
+
+    def _patient_checks(
+        self, keys: List[str], patient: Dict[str, Optional[float]]
+    ) -> Dict[str, Any]:
+        """Applies FDA-label kidney-function and age dosing rules to the regimen.
+
+        A drug whose label rule needs a measurement the user did not enter is
+        listed as not checked, so a blank field is never read as normal kidney
+        function.
+        """
+        flags: List[Dict[str, Any]] = []
+        not_checked: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        checked_drugs: List[str] = []
+        for rule in RENAL_RULES:
+            key = rule["drug"]
+            if key not in keys:
+                continue
+            measure = rule["measure"]
+            value = patient.get(measure)
+            if value is None:
+                not_checked.setdefault((key, measure), {
+                    "drug": self.registry[key]["name"],
+                    "measure": measure,
+                    "measure_label": MEASURE_LABELS[measure],
+                })
+                continue
+            if key not in checked_drugs:
+                checked_drugs.append(key)
+            if _rule_applies(rule, value):
+                flags.append({
+                    "drug": self.registry[key]["name"],
+                    "drug_key": key,
+                    "severity": rule["severity"],
+                    "title": rule["title"],
+                    "clinical_action": rule["action"],
+                    "measure": measure,
+                    "measure_label": MEASURE_LABELS[measure],
+                    "patient_value": value,
+                    "label_evidence": {
+                        "quote": rule["quote"],
+                        "section": rule["section"],
+                        "label_name": rule["label_name"],
+                        "set_id": rule["set_id"],
+                        "effective_time": rule["effective_time"],
+                        "dailymed_url": rule["dailymed_url"],
+                    },
+                })
+        flags.sort(key=lambda item: (0 if item["severity"] == "CRITICAL" else 1, item["title"]))
+        return {
+            "inputs": {field: patient.get(field) for field in PATIENT_LIMITS},
+            "flags": flags,
+            "not_checked": list(not_checked.values()),
+            "checked_drugs": [self.registry[key]["name"] for key in checked_drugs],
         }
 
     def _find_interaction(self, first: str, second: str) -> Optional[Dict[str, Any]]:
@@ -408,8 +517,32 @@ class ClinicalSafetyEngine:
                 f"Verify “{drug}” — not present in the demo knowledge base; screen it with a "
                 f"validated interaction database before administration."
             )
+        raw_checks = audit_result.get("patient_checks")
+        checks = raw_checks if isinstance(raw_checks, dict) else {}
+        dose_flags = [f for f in checks.get("flags", []) if isinstance(f, dict)]
+        not_checked = [n for n in checks.get("not_checked", []) if isinstance(n, dict)]
+        dose_lines = [
+            f"- {f.get('title', '')} (patient {f.get('measure_label', '')}: "
+            f"{f.get('patient_value', '?'):g}). FDA label: \"{(f.get('label_evidence') or {}).get('quote', '')}\""
+            if isinstance(f.get("patient_value"), (int, float)) else f"- {f.get('drug', '?')}: {f.get('title', '')}"
+            for f in dose_flags
+        ]
+        for f in dose_flags:
+            recommendations.insert(0, f"{f.get('drug', '?')}: {f.get('clinical_action', 'review dose')}")
+        for n in not_checked:
+            recommendations.append(
+                f"Kidney dosing for {n.get('drug', '?')} not checked: enter {n.get('measure_label', 'kidney function')}."
+            )
+        if not checks:
+            dose_section = "Not assessed (no kidney function entered)."
+        elif dose_lines:
+            dose_section = chr(10).join(dose_lines)
+        else:
+            dose_section = "No label dose adjustments triggered for the values entered."
         recommendations.append(
-            "Pharmacist to confirm the final regimen, renal/hepatic dosing, and monitoring plan."
+            "Pharmacist to confirm the final regimen, hepatic dosing, and monitoring plan."
+            if checks and not not_checked
+            else "Pharmacist to confirm the final regimen, renal/hepatic dosing, and monitoring plan."
         )
 
         generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -443,6 +576,9 @@ Critical interactions:
 
 Timing / monitoring issues:
 {chr(10).join(moderate_lines) if moderate_lines else 'None detected in the demo knowledge base.'}
+
+Kidney-function / age dosing (FDA label thresholds):
+{dose_section}
 
 [R] RECOMMENDATION
 ------------------

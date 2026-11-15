@@ -53,7 +53,15 @@
         <label for="patient-age">Age</label>
         <input id="patient-age" type="number" value="74" min="1" max="120">
       </div>
-      <p class="patient-hint">Used only in the SBAR draft and calendar export. Nothing is stored.</p>
+      <div class="patient-field patient-kidney">
+        <label for="patient-egfr">eGFR <span class="unit">mL/min/1.73m²</span></label>
+        <input id="patient-egfr" type="number" min="0" max="200" step="1" placeholder="not entered" inputmode="numeric">
+      </div>
+      <div class="patient-field patient-kidney">
+        <label for="patient-crcl">CrCl <span class="unit">Cockcroft-Gault, mL/min</span></label>
+        <input id="patient-crcl" type="number" min="0" max="200" step="1" placeholder="not entered" inputmode="numeric">
+      </div>
+      <p class="patient-hint">Age and kidney function drive FDA-label dosing checks. Labels differ: metformin and allopurinol use eGFR; lithium, the quinolones and others use CrCl. Blank means not checked, never normal. Nothing is stored.</p>
     </section>
 
     <!-- Quick Presets Toolbar -->
@@ -79,6 +87,10 @@
         <button class="btn-preset" data-preset="safe" type="button">
           <span class="preset-icon">✅</span>
           <strong>No known interactions</strong>
+        </button>
+        <button class="btn-preset" data-preset="kidney" type="button">
+          <span class="preset-icon">🩺</span>
+          <strong>Kidney patient</strong> — eGFR 28 dosing
         </button>
       </div>
     </section>

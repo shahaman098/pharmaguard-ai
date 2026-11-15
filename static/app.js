@@ -17,7 +17,14 @@ const PRESETS = {
   psych: ["Sertraline", "Tramadol", "Aspirin"],
   endocrine: ["Levothyroxine", "Ferrous Sulfate (Iron)", "Metformin"],
   unknown: ["Metformin", "Lisinopril", "Mystery Supplement"],
-  safe: ["Metformin", "Simvastatin", "Lisinopril"]
+  safe: ["Metformin", "Simvastatin", "Lisinopril"],
+  kidney: ["Metformin", "Lithium", "Naproxen", "Ciprofloxacin", "Allopurinol"]
+};
+
+// Kidney values that travel with a demo case; other cases clear them so a
+// stale value never carries over silently.
+const PRESET_PATIENT = {
+  kidney: { egfr: "28", crcl: "26" }
 };
 
 let currentRegimen = [...PRESETS.cardiac];
@@ -114,6 +121,9 @@ function setupEventListeners() {
       document.querySelectorAll(".btn-preset").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
       currentRegimen = [...(PRESETS[button.dataset.preset] || [])];
+      const presetPatient = PRESET_PATIENT[button.dataset.preset] || {};
+      $("patient-egfr").value = presetPatient.egfr || "";
+      $("patient-crcl").value = presetPatient.crcl || "";
       doseOverrides.clear();
       renderRegimenCards();
       runSafetyAudit();
@@ -325,6 +335,33 @@ function renderUnverifiedPanel(result) {
 // ---------------------------------------------------------------------------
 // Audit
 // ---------------------------------------------------------------------------
+function readPatientContext() {
+  const num = (id) => {
+    const raw = String($(id).value || "").trim();
+    if (raw === "") return null;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : null;
+  };
+  const clamp = (value, max) => (value === null ? null : Math.min(max, Math.max(0, value)));
+  return {
+    age: clamp(num("patient-age"), 120),
+    egfr: clamp(num("patient-egfr"), 200),
+    crcl: clamp(num("patient-crcl"), 200)
+  };
+}
+
+let patientAuditTimer = null;
+["patient-age", "patient-egfr", "patient-crcl"].forEach((id) => {
+  const input = $(id);
+  if (!input) return;
+  input.addEventListener("input", () => {
+    clearTimeout(patientAuditTimer);
+    patientAuditTimer = setTimeout(() => {
+      if (currentRegimen.length > 0) runSafetyAudit();
+    }, 350);
+  });
+});
+
 async function runSafetyAudit() {
   const requestId = ++auditRequestId;
   latestSchedule = null;
@@ -341,7 +378,8 @@ async function runSafetyAudit() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         medications: currentRegimen,
-        dose_overrides: Object.fromEntries(doseOverrides)
+        dose_overrides: Object.fromEntries(doseOverrides),
+        patient: readPatientContext()
       })
     });
     if (!res.ok) throw new Error(`Audit failed (${res.status})`);
@@ -421,20 +459,68 @@ function updateScoreCard(result) {
   }
 }
 
+function renderPatientChecks(result) {
+  const checks = result.patient_checks;
+  if (!checks) return;
+  (checks.flags || []).forEach((flag) => {
+    const ev = flag.label_evidence || {};
+    const quote = String(ev.quote || "");
+    const card = document.createElement("div");
+    card.className = `violation-card dosing-card ${flag.severity.toLowerCase()}`;
+    card.innerHTML = `
+      <div class="violation-header">
+        <div class="violation-title-group">
+          <h4>${escapeHtml(flag.title)}</h4>
+          <div class="violation-drugs"><strong>Patient-specific dosing:</strong> ${escapeHtml(flag.drug)}
+            <span class="spacing-badge dosing-badge">${escapeHtml(flag.measure_label)} = ${escapeHtml(String(flag.patient_value))}</span></div>
+        </div>
+        <span class="severity-pill ${flag.severity.toLowerCase()}">${flag.severity}</span>
+      </div>
+      <div class="violation-action">
+        <span class="action-label">Clinical action:</span>
+        <span>${escapeHtml(flag.clinical_action)}</span>
+      </div>
+      <details class="label-evidence ev-direct" open>
+        <summary>
+          <span class="ev-badge">✓ FDA label threshold, quoted word-for-word</span>
+          <span class="ev-meta">${escapeHtml(ev.label_name || "")} label · ${escapeHtml(String(ev.section || "").replace(/_/g, " "))} · effective ${escapeHtml(labelDate(ev.effective_time))}</span>
+        </summary>
+        <blockquote>${escapeHtml(quote)}</blockquote>
+        <a href="${escapeHtml(ev.dailymed_url || "#")}" target="_blank" rel="noopener">Open the label on DailyMed ↗</a>
+      </details>`;
+    violationsContainer.appendChild(card);
+  });
+  const missing = checks.not_checked || [];
+  if (missing.length) {
+    const byMeasure = {};
+    missing.forEach((item) => {
+      (byMeasure[item.measure_label] = byMeasure[item.measure_label] || []).push(item.drug);
+    });
+    const note = document.createElement("div");
+    note.className = "dosing-not-checked";
+    note.innerHTML = `<strong>⚠ Kidney dosing not checked.</strong> ` + Object.entries(byMeasure)
+      .map(([label, drugs]) => `${escapeHtml(drugs.join(", "))}: enter <em>${escapeHtml(label)}</em>`)
+      .join(" · ") + `. A blank value is never treated as normal kidney function.`;
+    violationsContainer.appendChild(note);
+  }
+}
+
 function renderViolations(result) {
   violationsContainer.innerHTML = "";
   const list = result.interactions || [];
-  violationsCountEl.textContent = list.length;
+  const flags = (result.patient_checks && result.patient_checks.flags) || [];
+  violationsCountEl.textContent = list.length + flags.length;
+  renderPatientChecks(result);
 
-  if (list.length === 0) {
-    violationsContainer.innerHTML = `
+  if (list.length === 0 && flags.length === 0) {
+    violationsContainer.insertAdjacentHTML("afterbegin", `
       <div class="safe-banner">
         <h4>✅ No known interactions in the demo knowledge base</h4>
         <p>${(result.unverified_count || 0) > 0
           ? "However, some medicines are unverified, so this regimen is not certified safe."
           : "This is not a clinical validation. Keep the pharmacist review."}</p>
       </div>
-    `;
+    `);
     return;
   }
 
@@ -846,7 +932,7 @@ async function openSbarModal() {
       body: JSON.stringify({
         audit_result: latestAuditResult,
         patient_name: ($("patient-name").value || "Patient").trim(),
-        age: Number($("patient-age").value) || 74
+        age: readPatientContext().age ?? 74
       })
     });
     if (!res.ok) throw new Error(`SBAR failed (${res.status})`);

@@ -14,7 +14,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-from pharmaguard.engine import ClinicalSafetyEngine
+from pharmaguard.engine import ClinicalSafetyEngine, parse_patient
 from pharmaguard.interactions import DISCLAIMER, DRUG_REGISTRY, KNOWLEDGE_BASE_META
 from pharmaguard.scheduler import ScheduleOptimizer
 
@@ -172,7 +172,11 @@ class PharmaGuardHandler(BaseHTTPRequestHandler):
                 if not isinstance(dose_overrides, dict):
                     self._send_json({"error": "dose_overrides must be an object"}, 400)
                     return
-                result = self.engine.audit_regimen(medications, dose_overrides)
+                patient, patient_error = parse_patient(payload.get("patient"))
+                if patient_error:
+                    self._send_json({"error": patient_error}, 400)
+                    return
+                result = self.engine.audit_regimen(medications, dose_overrides, patient)
                 self._send_json(result)
                 return
 
