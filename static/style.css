@@ -546,3 +546,7 @@ mark { background: #fbe7a1; color: inherit; padding: 0 2px; border-radius: 2px; 
   .advice-card { grid-template-columns: 1fr; gap: 2px; }
   .overview-row:has(> .graph-container.hidden) .score-card { grid-template-columns: 1fr; }
 }
+
+/* Unchecked medicines: "no clashes" is not a green light. */
+body:has(.score-card.score-incomplete) .safe-banner { border-color: var(--line-strong); background: var(--slate-weak); }
+body:has(.score-card.score-incomplete) .safe-banner h4 { color: var(--slate); }
