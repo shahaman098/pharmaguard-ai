@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -24,8 +24,8 @@
           </svg>
         </div>
         <div class="brand-text">
-          <h1 class="brand-title">PharmaGuard <span class="ai-pill">AI</span></h1>
-          <span class="brand-sub">Finds medicines that are dangerous together, shows the FDA label sentence that says so, and plans a day that keeps clashing doses apart. If it doesn’t know a medicine, it tells you.</span>
+          <h1 class="brand-title">PharmaGuard</h1>
+          <span class="brand-sub">Medicine safety check with the FDA label as proof</span>
         </div>
       </div>
       <div class="nav-actions">
@@ -45,7 +45,7 @@
       <li class="pl-step"><span class="pl-num">3</span><div><strong>Show proof</strong><span><b id="pl-fda">54/73</b> pairs + <b id="pl-dosing">12</b> dose limits in FDA label text</span></div></li>
       <li class="pl-step"><span class="pl-num">4</span><div><strong>Plan the day</strong><span>Keeps clashing doses apart</span></div></li>
       <li class="pl-step"><span class="pl-num">5</span><div><strong>Share</strong><span>Ready-made note for the pharmacist</span></div></li>
-      <li class="pl-guard"><span aria-hidden="true">⛔</span><div><strong>Never guesses</strong><span>Unknown medicine → “not checked”, never “safe”</span></div></li>
+      <li class="pl-guard"><div><strong>Never guesses</strong><span>Unknown medicine → “not checked”, never “safe”</span></div></li>
     </ol>
   </header>
 
@@ -85,12 +85,12 @@
         <section class="preset-section" aria-label="Demo cases">
           <span class="preset-label">Try an example</span>
           <div class="preset-buttons">
-            <button class="btn-preset active" data-preset="cardiac" type="button"><span class="preset-icon">🚨</span><strong>Heart patient, 6 medicines</strong></button>
-            <button class="btn-preset" data-preset="kidney" type="button"><span class="preset-icon">🩺</span><strong>Kidney patient</strong></button>
-            <button class="btn-preset" data-preset="psych" type="button"><span class="preset-icon">⚠️</span><strong>Antidepressant + painkiller</strong></button>
-            <button class="btn-preset" data-preset="endocrine" type="button"><span class="preset-icon">💊</span><strong>Thyroid + supplements</strong></button>
-            <button class="btn-preset" data-preset="unknown" type="button"><span class="preset-icon">❓</span><strong>Unknown medicine</strong></button>
-            <button class="btn-preset" data-preset="safe" type="button"><span class="preset-icon">✅</span><strong>No clashes</strong></button>
+            <button class="btn-preset active" data-preset="cardiac" type="button"><strong>Heart patient, 6 medicines</strong></button>
+            <button class="btn-preset" data-preset="kidney" type="button"><strong>Kidney patient</strong></button>
+            <button class="btn-preset" data-preset="psych" type="button"><strong>Antidepressant + painkiller</strong></button>
+            <button class="btn-preset" data-preset="endocrine" type="button"><strong>Thyroid + supplements</strong></button>
+            <button class="btn-preset" data-preset="unknown" type="button"><strong>Unknown medicine</strong></button>
+            <button class="btn-preset" data-preset="safe" type="button"><strong>No clashes</strong></button>
           </div>
         </section>
 
@@ -132,8 +132,7 @@
           <!-- Unverified medication panel -->
           <div id="unverified-panel" class="unverified-panel hidden" aria-live="polite">
             <div class="unverified-title">
-              <span class="unverified-icon">❓</span>
-              <strong>Medicines we couldn’t check</strong>
+                            <strong>Medicines we couldn’t check</strong>
             </div>
             <p>These aren’t in our medicine list, so we won’t call this list safe. Ask a pharmacist about them.</p>
             <div id="unverified-list" class="unverified-list"></div>
@@ -165,10 +164,13 @@
         <div class="overview-row">
         <!-- Score & Safety Summary Banner -->
         <div id="safety-score-card" class="score-card score-safe" aria-live="polite">
-          <div class="score-visual">
-            <div class="score-circle">
-              <span id="score-value" class="score-num">100</span>
-              <span class="score-max">safety score</span>
+          <div class="score-top">
+            <span class="score-label">Safety score</span>
+            <div class="score-visual">
+              <div class="score-circle">
+                <span id="score-value" class="score-num">100</span>
+                <span class="score-max">/100</span>
+              </div>
             </div>
           </div>
           <div class="score-details">

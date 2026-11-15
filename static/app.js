@@ -333,7 +333,7 @@ function renderUnverifiedPanel(result) {
 
   unverifiedPanel.classList.remove("hidden");
   unverifiedList.innerHTML = unknown
-    .map((name) => `<span class="unverified-chip">❓ ${escapeHtml(name)}</span>`)
+    .map((name) => `<span class="unverified-chip">${escapeHtml(name)}</span>`)
     .join("");
 }
 
@@ -533,7 +533,7 @@ function renderPatientChecks(result, part) {
     });
     const note = document.createElement("div");
     note.className = "dosing-not-checked";
-    note.innerHTML = `<strong>⚠ Kidney doses not checked.</strong> ` + Object.entries(byMeasure)
+    note.innerHTML = `<strong>Kidney doses not checked.</strong> ` + Object.entries(byMeasure)
       .map(([label, drugs]) => `${escapeHtml(drugs.join(", "))}: enter <em>${escapeHtml(label)}</em>`)
       .join(" · ") + `. We never assume the kidneys are normal.`;
     violationsContainer.appendChild(note);
@@ -551,7 +551,7 @@ function renderViolations(result) {
   if (list.length === 0 && flags.length === 0) {
     violationsContainer.insertAdjacentHTML("afterbegin", `
       <div class="safe-banner">
-        <h4>✅ No known clashes in our medicine list</h4>
+        <h4>No known clashes in our medicine list</h4>
         <p>${(result.unverified_count || 0) > 0
           ? "But some medicines couldn’t be checked, so we can’t call this list safe."
           : "This isn’t a medical sign-off. Keep your pharmacist in the loop."}</p>
@@ -613,7 +613,7 @@ function renderLabelEvidence(item) {
     return `
       <details class="label-evidence ${direct ? "ev-direct" : "ev-class"}">
         <summary>
-          <span class="ev-badge">${direct ? "✓ The FDA label says so" : "◐ The FDA label warns about this drug group"}</span>
+          <span class="ev-badge">${direct ? "✓ The FDA label says so" : "The FDA label warns about this drug group"}</span>
           <span class="ev-meta">${escapeHtml(label)} label · effective ${escapeHtml(labelDate(ev.effective_time))}</span>
         </summary>
         <blockquote>${quote}</blockquote>
@@ -621,7 +621,7 @@ function renderLabelEvidence(item) {
       </details>`;
   }
   if (ev.tier === "not_found") {
-    return `<div class="label-evidence ev-none"><span class="ev-badge">○ Not spelled out in the FDA label text</span>
+    return `<div class="label-evidence ev-none"><span class="ev-badge">Not spelled out in the FDA label text</span>
       <span class="ev-meta">Based on standard drug references${ev.review_note ? ` · reviewer note: ${escapeHtml(ev.review_note)}` : ""}</span></div>`;
   }
   return `<div class="violation-source">Source: ${escapeHtml(item.source || "Curated duplicate-therapy rule")}</div>`;
@@ -671,22 +671,21 @@ function renderInteractionGraph(result) {
     const end = positions[b];
     if (!start || !end) return "";
     const critical = item.severity === "CRITICAL";
-    const color = critical ? "#dc2626" : "#d97706";
+    const color = critical ? "#b42318" : "#b54708";
     const dash = item.spacing_resolvable ? 'stroke-dasharray="7 5"' : "";
-    return `<line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}" stroke="${color}" stroke-width="${critical ? 3 : 2}" ${dash} opacity="0.75"><title>${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)}: ${escapeHtml(item.title)}</title></line>`;
+    return `<line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}" stroke="${color}" stroke-width="${critical ? 2.5 : 1.75}" ${dash} opacity="0.9"><title>${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)}: ${escapeHtml(item.title)}</title></line>`;
   }).join("");
 
   const nodes = drugs.map((drug) => {
     const pos = positions[drug.key];
     const severity = worst[drug.key];
-    const stroke = severity === "CRITICAL" ? "#dc2626" : severity === "MODERATE" ? "#d97706" : "#94a3b8";
-    const initials = drug.name.replace(/[^A-Za-z ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+    const stroke = severity === "CRITICAL" ? "#b42318" : severity === "MODERATE" ? "#b54708" : "#9a9a94";
     const label = drug.name.length > 20 ? `${drug.name.slice(0, 18)}…` : drug.name;
+    const w = Math.max(70, label.length * 8.6 + 26);
     return `
       <g>
-        <circle cx="${pos.x}" cy="${pos.y}" r="28" fill="#ffffff" stroke="${stroke}" stroke-width="3"></circle>
-        <text x="${pos.x}" y="${pos.y + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">${escapeHtml(initials)}</text>
-        <text x="${pos.x}" y="${pos.y + 48}" text-anchor="middle" font-size="15" font-weight="600" fill="#334155">${escapeHtml(label)}</text>
+        <rect x="${pos.x - w / 2}" y="${pos.y - 16}" width="${w}" height="32" rx="4" fill="#ffffff" stroke="${stroke}" stroke-width="${severity ? 2 : 1}"></rect>
+        <text x="${pos.x}" y="${pos.y + 5}" text-anchor="middle" font-size="15" font-weight="600" fill="#16181d" font-family="IBM Plex Sans, sans-serif">${escapeHtml(label)}</text>
         <title>${escapeHtml(drug.name)}</title>
       </g>
     `;
@@ -747,18 +746,18 @@ function renderDayRibbon(schedule) {
   const ticks = [];
   for (let h = 6; h <= 24; h += 3) {
     const tx = x(h * 60);
-    ticks.push(`<line x1="${tx}" y1="${top - 6}" x2="${tx}" y2="${height - 8}" stroke="#e2e8f0"/>
+    ticks.push(`<line x1="${tx}" y1="${top - 6}" x2="${tx}" y2="${height - 8}" stroke="#e4e4df"/>
       <text x="${tx}" y="${top - 12}" text-anchor="middle" font-size="13" fill="#64748b">${String(h % 24).padStart(2, "0")}:00</text>`);
   }
   const lanes = drugs.map((drug, i) => {
     const y = top + i * laneH + laneH / 2;
     const dots = doses.filter((d) => d.drug === drug).map((d) => {
       const moved = d.status === "rescheduled";
-      const fill = moved ? "#7c3aed" : "#0369a1";
-      const ring = d.critical_conflict ? `stroke="#dc2626" stroke-width="3"` : "";
+      const fill = moved ? "#6941c6" : "#24496b";
+      const ring = d.critical_conflict ? `stroke="#b42318" stroke-width="3"` : "";
       return `<g><title>${escapeHtml(drug)} ${escapeHtml(d.time)}${moved ? " (moved by solver)" : ""}${d.critical_conflict ? " (critical conflict: needs review)" : ""}</title>
-        <rect x="${x(d.minutes) - 27}" y="${y - 12}" width="54" height="24" rx="12" fill="${fill}" ${ring}/>
-        <text x="${x(d.minutes)}" y="${y + 5}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${escapeHtml(d.time)}</text></g>`;
+        <rect x="${x(d.minutes) - 27}" y="${y - 12}" width="54" height="24" rx="4" fill="${fill}" ${ring}/>
+        <text x="${x(d.minutes)}" y="${y + 5}" text-anchor="middle" font-size="13" font-weight="600" fill="#fff" font-family="IBM Plex Mono, monospace">${escapeHtml(d.time)}</text></g>`;
     }).join("");
     const shown = drug.length > 15 ? `${drug.slice(0, 14)}…` : drug;
     return `<text x="${left - 10}" y="${y + 5}" text-anchor="end" font-size="14" font-weight="600" fill="#0f172a"><title>${escapeHtml(drug)}</title>${escapeHtml(shown)}</text>
@@ -784,7 +783,7 @@ function renderDayRibbon(schedule) {
 
   host.innerHTML = `
     <div class="ribbon-head"><strong>Your day at a glance</strong>
-      <span class="ribbon-key"><i style="background:#0369a1"></i>usual time <i style="background:#7c3aed"></i>moved for safety <i class="ring"></i>dangerous pair — ask a pharmacist</span></div>
+      <span class="ribbon-key"><i style="background:#24496b"></i>usual time <i style="background:#6941c6"></i>moved for safety <i class="ring"></i>dangerous pair — ask a pharmacist</span></div>
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Daily dose times per medicine">${ticks.join("")}${lanes}</svg>
     ${chips ? `<div class="rule-chips"><span class="rule-chips-title">Spacing checked:</span>${chips}</div>` : ""}`;
 }
@@ -917,9 +916,14 @@ function statusLabel(status) {
 function renderPatientAdvice(result) {
   patientAdviceList.innerHTML = "";
   (result.patient_summary || []).forEach((text) => {
+    // Engine lines look like "🚨 DANGER: …"; show the keyword as a quiet label.
+    const match = String(text).match(/^\S+\s+([A-Z][A-Z ]+):\s*(.*)$/s);
+    const kind = match ? match[1].trim() : "";
+    const body = match ? match[2] : String(text).replace(/^[^\w“"]+/u, "");
+    const tone = kind === "DANGER" ? "danger" : kind === "NOT CHECKED" ? "unknown" : kind ? "care" : "ok";
     const item = document.createElement("div");
-    item.className = "advice-card";
-    item.textContent = text;
+    item.className = `advice-card advice-${tone}`;
+    item.innerHTML = `${kind ? `<span class="advice-kind">${escapeHtml(kind.charAt(0) + kind.slice(1).toLowerCase())}</span>` : ""}<p>${escapeHtml(body)}</p>`;
     patientAdviceList.appendChild(item);
   });
 }
