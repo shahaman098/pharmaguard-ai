@@ -1,7 +1,7 @@
 # PharmaGuard AI — One-Page Project Summary
 
 **DSH Hacks V2 · AI × Healthcare**
-**Repo:** https://github.com/shahaman098/pharmaguard-ai · **Run locally:** `python3 server.py --port 8080`
+**Repo:** https://github.com/shahaman098/pharmaguard-ai · **Live demo:** https://pharmaguard-ai-5jhp.onrender.com · **Run locally:** `python3 server.py --port 8080`
 
 ---
 
