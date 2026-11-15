@@ -86,7 +86,7 @@ async function fetchMeta() {
     if (kb.rule_count) $("pl-rules").textContent = kb.rule_count;
     if (ev.counts && ev.pairwise_rules) $("pl-fda").textContent = `${ev.counts.direct || 0}/${ev.pairwise_rules}`;
     if (dosing.rule_count) $("pl-dosing").textContent = dosing.rule_count;
-    $("kb-status-text").textContent = `Engine online · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules`;
+    $("kb-status-text").textContent = `Checks ${kb.drug_count || 0} medicines · ${kb.rule_count || 0} known clashes`;
     void evText;
     $("footer-kb").textContent = `Knowledge base v${kb.version || "2.0"} · ${kb.drug_count || 0} drugs · ${kb.rule_count || 0} rules · not for clinical use`;
     if (meta.disclaimer) {
@@ -104,7 +104,7 @@ async function fetchDrugs() {
     const data = await res.json();
     allAvailableDrugs = data.drugs || [];
 
-    drugDropdown.innerHTML = '<option value="" disabled selected>-- Select a medication to add --</option>';
+    drugDropdown.innerHTML = '<option value="" disabled selected>Choose a medicine to add</option>';
     allAvailableDrugs.forEach((drug) => {
       const option = document.createElement("option");
       option.value = drug.name;
@@ -113,7 +113,7 @@ async function fetchDrugs() {
     });
   } catch (error) {
     console.error("Error fetching drug registry:", error);
-    toast("Could not load the drug registry. Is the server running?", "error");
+    toast("Couldn’t load the medicine list. Please refresh.", "error");
   }
 }
 
@@ -138,7 +138,7 @@ function setupEventListeners() {
   $("btn-add-drug").addEventListener("click", () => {
     const selected = drugDropdown.value;
     if (!selected) {
-      toast("Choose a medication first.", "error");
+      toast("Choose a medicine first.", "error");
       return;
     }
     if (!currentRegimen.includes(selected)) {
@@ -191,7 +191,7 @@ function setupEventListeners() {
   $("btn-re-optimize").addEventListener("click", async () => {
     if (!latestAuditResult) return;
     await fetchAndRenderSchedule(latestAuditResult);
-    toast("Schedule re-optimized.", "success");
+    toast("Plan updated.", "success");
   });
 
   $("btn-calendar").addEventListener("click", downloadCalendar);
@@ -299,7 +299,7 @@ function renderRegimenCards() {
     } else {
       card.innerHTML = `
         <div class="med-info">
-          <h3>${escapeHtml(medName)} <span class="unverified-pill">UNVERIFIED</span></h3>
+          <h3>${escapeHtml(medName)} <span class="unverified-pill">NOT CHECKED</span></h3>
           <div class="med-class">Not in the demo knowledge base</div>
           <div class="med-details-row">
             <span>This medicine will not be treated as safe. Confirm it with a pharmacist.</span>
@@ -401,7 +401,7 @@ async function runSafetyAudit() {
   } catch (error) {
     if (requestId !== auditRequestId) return;
     console.error("Audit error:", error);
-    toast("The audit could not run. Check that the local server is running.", "error");
+    toast("The check couldn’t run. Please try again in a moment.", "error");
   }
 }
 
@@ -411,7 +411,7 @@ function resetAuditView() {
   scoreStatusText.textContent = "NO MEDICATIONS TO REVIEW";
   scoreCard.className = "score-card score-safe";
   scoreSummaryMetrics.innerHTML = '<span class="metric-tag green">0 Conflicts</span>';
-  scoreRecommendationSub.textContent = "Add medications to run a safety audit.";
+  scoreRecommendationSub.textContent = "Add medicines or pick an example to start.";
   violationsContainer.innerHTML = '<div class="empty-state">Add medications to run the safety audit.</div>';
   violationsCountEl.textContent = "0";
   graphContainer.classList.add("hidden");
@@ -440,29 +440,29 @@ function updateScoreCard(result) {
 
   const tags = [];
   if (result.critical_count > 0) {
-    tags.push(`<span class="metric-tag red">${result.critical_count} Critical</span>`);
+    tags.push(`<span class="metric-tag red">${result.critical_count} dangerous</span>`);
   }
   if (result.moderate_count > 0) {
-    tags.push(`<span class="metric-tag amber">${result.moderate_count} Timing / monitoring</span>`);
+    tags.push(`<span class="metric-tag amber">${result.moderate_count} need care</span>`);
   }
   if ((result.unverified_count || 0) > 0) {
-    tags.push(`<span class="metric-tag slate">${result.unverified_count} Unverified</span>`);
+    tags.push(`<span class="metric-tag slate">${result.unverified_count} not checked</span>`);
   }
   if (result.verified_count > 0) {
-    tags.push(`<span class="metric-tag ${result.coverage_pct === 100 ? "green" : "slate"}">${result.coverage_pct}% verified</span>`);
+    tags.push(`<span class="metric-tag ${result.coverage_pct === 100 ? "green" : "slate"}">${result.coverage_pct}% checked</span>`);
   }
   scoreSummaryMetrics.innerHTML = tags.join("");
 
   if (result.critical_count > 0) {
-    scoreRecommendationSub.textContent = "Critical interaction detected. Do not start or change these medicines without pharmacist or prescriber review.";
+    scoreRecommendationSub.textContent = "Some of these should not be taken together. Don’t start, stop or change anything before talking to a pharmacist or doctor.";
   } else if (result.moderate_count > 0) {
-    scoreRecommendationSub.textContent = "Timing or monitoring issue detected. Review the schedule and the pharmacist questions below.";
+    scoreRecommendationSub.textContent = "Some medicines need spacing or extra checks. See the daily plan and the questions for your pharmacist.";
   } else if ((result.unverified_count || 0) > 0) {
-    scoreRecommendationSub.textContent = "Some medicines could not be checked. This regimen is not certified safe until they are verified.";
+    scoreRecommendationSub.textContent = "We couldn’t check every medicine, so we can’t call this list safe. Ask a pharmacist about the unknown ones.";
   } else if (result.verified_count > 0) {
-    scoreRecommendationSub.textContent = "No known interactions in the demo knowledge base. Continue standard monitoring and pharmacist review.";
+    scoreRecommendationSub.textContent = "No known clashes in our medicine list. Keep your usual pharmacist reviews.";
   } else {
-    scoreRecommendationSub.textContent = "Add medications to run a safety audit.";
+    scoreRecommendationSub.textContent = "Add medicines or pick an example to start.";
   }
 }
 
@@ -478,8 +478,8 @@ function renderEvidenceSummary(list, flags) {
   bar.className = "evidence-summary";
   bar.innerHTML = `
     <div class="es-head">
-      <strong>Evidence trail</strong>
-      <span>${direct} of ${total} alert${total === 1 ? "" : "s"} quote the FDA label directly</span>
+      <strong>Where the proof comes from</strong>
+      <span>${direct} of ${total} problem${total === 1 ? "" : "s"} backed by the FDA label’s own words</span>
     </div>
     <div class="es-bar" role="img" aria-label="${direct} direct, ${classOnly} class-level, ${other} curated rule only">
       <span class="es-direct" style="width:${pct(direct)}"></span>
@@ -487,9 +487,9 @@ function renderEvidenceSummary(list, flags) {
       <span class="es-other" style="width:${pct(other)}"></span>
     </div>
     <div class="es-legend">
-      <span><i class="es-direct"></i>FDA label quote (${direct})</span>
-      <span><i class="es-class"></i>Class-level mention (${classOnly})</span>
-      <span><i class="es-other"></i>Curated rule only, no label quote (${other})</span>
+      <span><i class="es-direct"></i>FDA label text (${direct})</span>
+      <span><i class="es-class"></i>Label names the drug group (${classOnly})</span>
+      <span><i class="es-other"></i>Drug references only (${other})</span>
     </div>`;
   violationsContainer.appendChild(bar);
 }
@@ -506,18 +506,18 @@ function renderPatientChecks(result, part) {
       <div class="violation-header">
         <div class="violation-title-group">
           <h4>${escapeHtml(flag.title)}</h4>
-          <div class="violation-drugs"><strong>Patient-specific dosing:</strong> ${escapeHtml(flag.drug)}
+          <div class="violation-drugs"><strong>Dose check for this patient:</strong> ${escapeHtml(flag.drug)}
             <span class="spacing-badge dosing-badge">${escapeHtml(flag.measure_label)} = ${escapeHtml(String(flag.patient_value))}</span></div>
         </div>
-        <span class="severity-pill ${flag.severity.toLowerCase()}">${flag.severity}</span>
+        <span class="severity-pill ${flag.severity.toLowerCase()}">${severityLabel(flag.severity)}</span>
       </div>
       <div class="violation-action">
-        <span class="action-label">Clinical action:</span>
+        <span class="action-label">What to do:</span>
         <span>${escapeHtml(flag.clinical_action)}</span>
       </div>
       <details class="label-evidence ev-direct" open>
         <summary>
-          <span class="ev-badge">✓ FDA label threshold, quoted word-for-word</span>
+          <span class="ev-badge">✓ The FDA label’s exact words</span>
           <span class="ev-meta">${escapeHtml(ev.label_name || "")} label · ${escapeHtml(String(ev.section || "").replace(/_/g, " "))} · effective ${escapeHtml(labelDate(ev.effective_time))}</span>
         </summary>
         <blockquote>${escapeHtml(quote)}</blockquote>
@@ -533,9 +533,9 @@ function renderPatientChecks(result, part) {
     });
     const note = document.createElement("div");
     note.className = "dosing-not-checked";
-    note.innerHTML = `<strong>⚠ Kidney dosing not checked.</strong> ` + Object.entries(byMeasure)
+    note.innerHTML = `<strong>⚠ Kidney doses not checked.</strong> ` + Object.entries(byMeasure)
       .map(([label, drugs]) => `${escapeHtml(drugs.join(", "))}: enter <em>${escapeHtml(label)}</em>`)
-      .join(" · ") + `. A blank value is never treated as normal kidney function.`;
+      .join(" · ") + `. We never assume the kidneys are normal.`;
     violationsContainer.appendChild(note);
   }
 }
@@ -551,10 +551,10 @@ function renderViolations(result) {
   if (list.length === 0 && flags.length === 0) {
     violationsContainer.insertAdjacentHTML("afterbegin", `
       <div class="safe-banner">
-        <h4>✅ No known interactions in the demo knowledge base</h4>
+        <h4>✅ No known clashes in our medicine list</h4>
         <p>${(result.unverified_count || 0) > 0
-          ? "However, some medicines are unverified, so this regimen is not certified safe."
-          : "This is not a clinical validation. Keep the pharmacist review."}</p>
+          ? "But some medicines couldn’t be checked, so we can’t call this list safe."
+          : "This isn’t a medical sign-off. Keep your pharmacist in the loop."}</p>
       </div>
     `);
     renderPatientChecks(result, "note");
@@ -565,21 +565,21 @@ function renderViolations(result) {
     const card = document.createElement("div");
     card.className = `violation-card ${item.severity.toLowerCase()}`;
     const spacingBadge = item.spacing_resolvable
-      ? `<span class="spacing-badge">Timing-fixable · ${item.recommended_spacing_hours}h</span>`
+      ? `<span class="spacing-badge">Fixed by spacing ${item.recommended_spacing_hours}h apart</span>`
       : "";
     card.innerHTML = `
       <div class="violation-header">
         <div class="violation-title-group">
           <h4>${escapeHtml(item.title)}</h4>
-          <div class="violation-drugs"><strong>Interacting pair:</strong> ${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)} ${spacingBadge}</div>
+          <div class="violation-drugs"><strong>Medicines:</strong> ${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)} ${spacingBadge}</div>
         </div>
-        <span class="severity-pill ${item.severity.toLowerCase()}">${item.severity}</span>
+        <span class="severity-pill ${item.severity.toLowerCase()}">${severityLabel(item.severity)}</span>
       </div>
       <div class="violation-body">
-        <p><strong>Mechanism:</strong> ${escapeHtml(item.mechanism)}</p>
+        <p><strong>Why:</strong> ${escapeHtml(item.mechanism)}</p>
       </div>
       <div class="violation-action">
-        <span class="action-label">Clinical action:</span>
+        <span class="action-label">What to do:</span>
         <span>${escapeHtml(item.clinical_action)}</span>
       </div>
       ${renderLabelEvidence(item)}
@@ -613,7 +613,7 @@ function renderLabelEvidence(item) {
     return `
       <details class="label-evidence ${direct ? "ev-direct" : "ev-class"}">
         <summary>
-          <span class="ev-badge">${direct ? "✓ FDA label confirms" : "◐ FDA label: class-level mention only"}</span>
+          <span class="ev-badge">${direct ? "✓ The FDA label says so" : "◐ The FDA label warns about this drug group"}</span>
           <span class="ev-meta">${escapeHtml(label)} label · effective ${escapeHtml(labelDate(ev.effective_time))}</span>
         </summary>
         <blockquote>${quote}</blockquote>
@@ -621,8 +621,8 @@ function renderLabelEvidence(item) {
       </details>`;
   }
   if (ev.tier === "not_found") {
-    return `<div class="label-evidence ev-none"><span class="ev-badge">○ Not found in the searched FDA label sections</span>
-      <span class="ev-meta">Rule kept from curated pharmacology references${ev.review_note ? ` · reviewer note: ${escapeHtml(ev.review_note)}` : ""}</span></div>`;
+    return `<div class="label-evidence ev-none"><span class="ev-badge">○ Not spelled out in the FDA label text</span>
+      <span class="ev-meta">Based on standard drug references${ev.review_note ? ` · reviewer note: ${escapeHtml(ev.review_note)}` : ""}</span></div>`;
   }
   return `<div class="violation-source">Source: ${escapeHtml(item.source || "Curated duplicate-therapy rule")}</div>`;
 }
@@ -780,13 +780,13 @@ function renderDayRibbon(schedule) {
     })
     .filter(Boolean);
   const fmt = (m) => `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}`;
-  const chips = checks.map((c) => `<span class="rule-chip ${c.ok ? "ok" : "bad"}">${c.ok ? "✓" : "✗"} ${escapeHtml(c.label)}: needs ≥${fmt(c.need)}, scheduled ${fmt(c.gap)} apart</span>`).join("");
+  const chips = checks.map((c) => `<span class="rule-chip ${c.ok ? "ok" : "bad"}">${c.ok ? "✓" : "✗"} ${escapeHtml(c.label)}: at least ${fmt(c.need)} apart, planned ${fmt(c.gap)}</span>`).join("");
 
   host.innerHTML = `
-    <div class="ribbon-head"><strong>Day at a glance</strong>
-      <span class="ribbon-key"><i style="background:#0369a1"></i>standard <i style="background:#7c3aed"></i>moved for safety <i class="ring"></i>critical conflict — needs review</span></div>
+    <div class="ribbon-head"><strong>Your day at a glance</strong>
+      <span class="ribbon-key"><i style="background:#0369a1"></i>usual time <i style="background:#7c3aed"></i>moved for safety <i class="ring"></i>dangerous pair — ask a pharmacist</span></div>
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Daily dose times per medicine">${ticks.join("")}${lanes}</svg>
-    ${chips ? `<div class="rule-chips"><span class="rule-chips-title">Spacing rules checked against these times:</span>${chips}</div>` : ""}`;
+    ${chips ? `<div class="rule-chips"><span class="rule-chips-title">Spacing checked:</span>${chips}</div>` : ""}`;
 }
 
 function renderTimeline(schedule) {
@@ -809,7 +809,7 @@ function renderTimeline(schedule) {
             <strong>${escapeHtml(dose.drug)}</strong> (${escapeHtml(dose.dose)})
           </span>
           <span class="dose-status ${dose.status}">${statusLabel(dose.status)}</span>
-          ${dose.critical_conflict ? '<span class="dose-critical">Critical conflict</span>' : ""}
+          ${dose.critical_conflict ? '<span class="dose-critical">Dangerous pair</span>' : ""}
         </div>
         <div class="slot-instruction">${escapeHtml(dose.instruction)}</div>
       </div>
@@ -874,33 +874,36 @@ function renderScheduleNotes(schedule) {
     : "";
 
   const unresolvedHtml = unresolved.length
-    ? `<div class="note-card unresolved"><h4>Unresolved timing conflicts</h4><ul>${unresolved.map((item) => `<li>${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)}: ${item.actual_hours}h apart, ${item.required_hours}h recommended.</li>`).join("")}</ul></div>`
+    ? `<div class="note-card unresolved"><h4>Doses we couldn’t space far enough apart</h4><ul>${unresolved.map((item) => `<li>${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)}: ${item.actual_hours}h apart, ${item.required_hours}h advised.</li>`).join("")}</ul></div>`
     : "";
 
   const criticalHtml = criticalConflicts.length
-    ? `<div class="note-card critical-conflicts"><h4>Critical pairs could not be fully separated</h4><p>Do not use this timeline as a medication order. Review the contraindications above.</p><ul>${criticalConflicts.map((item) => `<li>${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)}: ${item.actual_hours}h apart, ${item.required_hours}h minimum for administration.</li>`).join("")}</ul></div>`
+    ? `<div class="note-card critical-conflicts"><h4>Dangerous pairs that timing can’t fix</h4><p>Don’t follow this plan for these medicines. A pharmacist or doctor needs to decide; see the problems above.</p><ul>${criticalConflicts.map((item) => `<li>${escapeHtml(item.drug_a)} + ${escapeHtml(item.drug_b)}: ${item.actual_hours}h apart, ${item.required_hours}h minimum.</li>`).join("")}</ul></div>`
     : "";
 
   const constraintStatus = solver.fully_constrained
-    ? "all spacing constraints satisfied"
+    ? "every spacing rule met"
     : solver.critical_relaxed
-      ? "constraints relaxed — review critical conflicts"
-      : "spacing relaxed";
+      ? "some rules couldn’t be met: see the dangerous pairs"
+      : "some spacing loosened";
 
   const solverHtml = `
     <div class="solver-meta">
-      ${escapeHtml(solver.algorithm || "constraint solver")} ·
-      ${solver.nodes_explored || 0} search nodes ·
-      ${constraintStatus}
+      Plan checked: ${constraintStatus} ·
+      ${solver.nodes_explored || 0} arrangements tried
     </div>
   `;
 
   scheduleNotes.innerHTML = adjustmentHtml + unresolvedHtml + criticalHtml + solverHtml;
 }
 
+function severityLabel(severity) {
+  return severity === "CRITICAL" ? "Dangerous" : severity === "MODERATE" ? "Use care" : severity;
+}
+
 function statusLabel(status) {
   const labels = {
-    fasting: "Fasting",
+    fasting: "Empty stomach",
     with_meal: "With meal",
     rescheduled: "Moved for safety",
     standard: "Standard"
@@ -928,7 +931,7 @@ function downloadCalendar() {
   const hasDaily = !!(latestSchedule && (latestSchedule.doses || []).length);
   const hasWeekly = !!(latestSchedule && (latestSchedule.weekly || []).length);
   if (!hasDaily && !hasWeekly) {
-    toast("Run an audit with at least one scheduled medicine first.", "error");
+    toast("Check a list with at least one daily medicine first.", "error");
     return;
   }
 
@@ -1025,7 +1028,7 @@ function downloadBlob(content, filename, type) {
 // ---------------------------------------------------------------------------
 async function openSbarModal() {
   if (!latestAuditResult) {
-    toast("Run an audit first.", "error");
+    toast("Check some medicines first.", "error");
     return;
   }
   try {
@@ -1044,7 +1047,7 @@ async function openSbarModal() {
     sbarModal.classList.add("open");
   } catch (error) {
     console.error("SBAR error:", error);
-    toast("Could not generate the SBAR draft.", "error");
+    toast("Couldn’t write the pharmacist note.", "error");
   }
 }
 
@@ -1260,7 +1263,7 @@ function renderScanDetected() {
   }
 
   container.innerHTML = `
-    <div class="scan-detected-title">Detected medicines — confirm before adding</div>
+    <div class="scan-detected-title">Medicines we found: tick the ones to add</div>
     ${scanDetected.map((item, index) => `
       <label class="scan-result-item">
         <input type="checkbox" data-scan-index="${index}" ${item.checked ? "checked" : ""}>
@@ -1308,7 +1311,7 @@ function addScannedMedications() {
   const parts = [];
   if (added) parts.push(`added ${added} medicine${added === 1 ? "" : "s"}`);
   if (dosesUpdated) parts.push(`applied ${dosesUpdated} label dose${dosesUpdated === 1 ? "" : "s"}`);
-  toast(parts.length ? `From label: ${parts.join(", ")}.` : "Those medicines are already in the regimen.", parts.length ? "success" : "info");
+  toast(parts.length ? `From label: ${parts.join(", ")}.` : "Those medicines are already on the list.", parts.length ? "success" : "info");
 }
 
 function showScanError(message) {

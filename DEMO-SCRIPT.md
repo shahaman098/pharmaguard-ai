@@ -2,7 +2,7 @@
 
 **Target:** 2:30 (hard limit: 3:00)
 **Format:** 1080p screen recording, clear voiceover, real cursor, no fake features.
-**Before recording:** run `python3 server.py --port 8080`, open `http://localhost:8080`, and click **Scan prescription label → Try a sample label** once so the OCR worker is warm. Close other tabs and bookmarks.
+**Before recording:** run `python3 server.py --port 8080`, open `http://localhost:8080`, and click **Scan a label → Try a sample label** once so the OCR worker is warm. Close other tabs and bookmarks.
 
 ---
 
@@ -16,7 +16,7 @@
 | 1:05–1:30 | Resolution | Constraint-based 24-hour schedule |
 | 1:30–1:44 | Patient action | One-click calendar export |
 | 1:44–2:03 | Clinician handoff | SBAR draft |
-| 2:03–2:18 | Fail-safe | Unknown medicine is marked UNVERIFIED |
+| 2:03–2:18 | Fail-safe | Unknown medicine is marked NOT CHECKED |
 | 2:18–2:30 | Proof + close | Tests, repo, impact |
 
 ---
@@ -34,7 +34,7 @@
 
 **Clicks:**
 1. Click **Clear all** (start from a clean regimen).
-2. Click **Scan prescription label**.
+2. Click **Scan a label**.
 3. Click **Try a sample label** (or drag in your own bottle photo).
 4. Wait for **Detected medicines — confirm before adding**.
 5. Point at the six detected medicines and the parsed doses: Warfarin 5 mg, Ibuprofen 400 mg, Ciprofloxacin 500 mg, Clarithromycin 500 mg, Simvastatin 20 mg, Calcium Carbonate 600 mg.
@@ -46,8 +46,8 @@
 ### 0:40–1:05 — The safety audit
 
 **Clicks:**
-1. The audit runs automatically after adding. If needed, click **Run clinical safety audit**.
-2. Point at the score card: **2 Critical**, **3 Timing / monitoring**, **100% verified**.
+1. The audit runs automatically after adding. If needed, click **Check these medicines**.
+2. Point at the score card: **2 dangerous**, **3 need care**, **100% checked**.
 3. Scroll the alert cards and the **interaction map**.
 4. Open the Warfarin + Ibuprofen card and the Ciprofloxacin + Calcium card.
 
@@ -57,7 +57,7 @@
 ### 1:05–1:30 — Resolve the schedule
 
 **Clicks:**
-1. Click the **24-hour schedule** tab.
+1. Click the **Daily plan** tab.
 2. Point at the 12:30 midday group (calcium + ibuprofen) and the 22:00 simvastatin bedtime dose.
 3. Point at the “Why this schedule” notes: ciprofloxacin/calcium 5.5h apart, simvastatin/clarithromycin separated, warfarin/ibuprofen separated for administration safety.
 4. Point at the solver line: “all spacing constraints satisfied.”
@@ -77,7 +77,7 @@
 ### 1:44–2:03 — Clinician handoff
 
 **Clicks:**
-1. Click **Export SBAR**.
+1. Click **Note for pharmacist**.
 2. Point at the Situation, Background, Assessment, and Recommendation sections.
 3. Highlight the unverified-medicine line and the disclaimer.
 
@@ -88,14 +88,14 @@
 
 **Clicks:**
 1. Close the SBAR modal.
-2. Click the **Unknown drug** demo case.
-3. Point at **INCOMPLETE — UNVERIFIED MEDICATIONS**, **75/100**, **67% verified**, and the unverified chip.
-4. Show the patient advice line beginning “UNVERIFIED.”
+2. Click the **Unknown medicine** example.
+3. Point at **Not fully checked: some medicines unknown**, **75/100**, **67% checked**, and the NOT CHECKED chip.
+4. Show the advice line beginning “NOT CHECKED.”
 
 **Narration:**
 “This is the part we care about most. If a medicine is not in our knowledge base, PharmaGuard does not guess. It marks the regimen incomplete and tells the patient to ask a pharmacist. A false ‘safe’ is worse than an honest ‘I don’t know.’”
 
-**Kidney dosing beat (+10 s, right after the fail-safe):** click the **Kidney patient** demo case (eGFR 28, CrCl 26 fill in automatically). Point at the **Metformin contraindicated: eGFR below 30** card and its quote, *“contraindicated in patients with: Severe renal impairment (eGFR below 30 mL/min/1.73 m2)”*.
+**Kidney dosing beat (+10 s, right after the fail-safe):** click the **Kidney patient** example (eGFR 28, CrCl 26 fill in automatically). Point at the **Metformin contraindicated: eGFR below 30** card and its quote, *“contraindicated in patients with: Severe renal impairment (eGFR below 30 mL/min/1.73 m2)”*.
 > "Give it the patient's kidney function and it doses for this patient: metformin is contraindicated below an eGFR of 30, and that's the FDA label's own sentence, not ours. Leave the field blank and it says 'not checked', never 'normal'."
 
 ### 2:18–2:30 — Proof and close

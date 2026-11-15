@@ -106,7 +106,7 @@ class TestPatientChecks(unittest.TestCase):
         self.assertEqual(safe["critical_count"], 0)
         self.assertEqual(unsafe["critical_count"], 1)
         self.assertLess(unsafe["safety_score"], safe["safety_score"])
-        self.assertTrue(unsafe["overall_status"].startswith("CRITICAL"))
+        self.assertEqual(unsafe["status_color"], "red")
 
     def test_flag_carries_label_quote(self):
         result, _ = self.flags(["metformin"], egfr=20)

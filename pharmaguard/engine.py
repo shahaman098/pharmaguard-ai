@@ -23,9 +23,9 @@ from .interactions import (
 )
 
 MEASURE_LABELS = {
-    "egfr": "eGFR (mL/min/1.73 m²)",
-    "crcl": "CrCl, Cockcroft-Gault (mL/min)",
-    "age": "Age (years)",
+    "egfr": "kidney function (eGFR)",
+    "crcl": "kidney clearance (CrCl)",
+    "age": "age",
 }
 PATIENT_LIMITS = {"age": (0, 120), "egfr": (0, 200), "crcl": (0, 200)}
 
@@ -269,19 +269,19 @@ class ClinicalSafetyEngine:
             safety_score = min(safety_score, max(40, 80 - (5 * len(unknown_drugs))))
 
         if critical_count > 0:
-            overall_status = "CRITICAL RISK — PHARMACIST REVIEW REQUIRED"
+            overall_status = "Dangerous combination: talk to a pharmacist first"
             status_color = "red"
         elif moderate_count > 0:
-            overall_status = "MODERATE RISK — TIMING OR MONITORING REVIEW REQUIRED"
+            overall_status = "Needs care: spacing or extra checks"
             status_color = "amber"
         elif unknown_drugs:
-            overall_status = "INCOMPLETE — UNVERIFIED MEDICATIONS"
+            overall_status = "Not fully checked: some medicines unknown"
             status_color = "slate"
         elif normalized_keys:
-            overall_status = "SAFE — NO KNOWN INTERACTIONS IN DEMO KB"
+            overall_status = "No known clashes in our medicine list"
             status_color = "green"
         else:
-            overall_status = "NO MEDICATIONS TO REVIEW"
+            overall_status = "Add medicines to check"
             status_color = "slate"
 
         total_medications = len(normalized_keys) + len(unknown_drugs)
@@ -422,8 +422,8 @@ class ClinicalSafetyEngine:
 
             if item["severity"] == "CRITICAL":
                 advice.append(
-                    f"🚨 DANGER: Do not take {drug_a} and {drug_b} together without "
-                    f"talking to your doctor or pharmacist. {item['title']}. "
+                    f"🚨 DANGER: Don’t take {drug_a} and {drug_b} together until you’ve "
+                    f"spoken to your doctor or pharmacist. {item['title']}. "
                     f"{item['clinical_action']}"
                 )
             elif item["spacing_resolvable"]:
@@ -441,15 +441,15 @@ class ClinicalSafetyEngine:
 
         for drug in unknown_drugs:
             advice.append(
-                f"❓ UNVERIFIED: We could not check “{drug}” against our demo "
-                f"knowledge base. Do not assume it is safe. Show this list to a "
-                f"pharmacist and ask about interactions."
+                f"❓ NOT CHECKED: “{drug}” isn’t in our medicine list, so we "
+                f"couldn’t check it. Don’t assume it’s safe. Show this list to a "
+                f"pharmacist and ask whether it clashes with your other medicines."
             )
 
         if not advice:
             advice.append(
-                "✅ No known interactions were found in this demo knowledge base. "
-                "This does not replace a review by your pharmacist or doctor."
+                "✅ We found no known clashes in our medicine list. "
+                "This doesn’t replace a check by your pharmacist or doctor."
             )
         return advice
 

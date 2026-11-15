@@ -25,7 +25,7 @@
         </div>
         <div class="brand-text">
           <h1 class="brand-title">PharmaGuard <span class="ai-pill">AI</span></h1>
-          <span class="brand-sub">Alerts quote the official FDA label, a constraint solver reschedules clashing doses, and unknown drugs are refused, never guessed.</span>
+          <span class="brand-sub">Finds medicines that are dangerous together, shows the FDA label sentence that says so, and plans a day that keeps clashing doses apart. If it doesn’t know a medicine, it tells you.</span>
         </div>
       </div>
       <div class="nav-actions">
@@ -35,17 +35,17 @@
         </span>
         <button id="btn-export-sbar" class="btn btn-secondary btn-sbar" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Export SBAR handoff
+          Note for pharmacist
         </button>
       </div>
     </div>
     <ol class="pipeline-strip" aria-label="How PharmaGuard works">
-      <li class="pl-step"><span class="pl-num">1</span><div><strong>Read</strong><span>Label photo → doses</span></div></li>
-      <li class="pl-step"><span class="pl-num">2</span><div><strong>Check</strong><span><b id="pl-rules">77</b> deterministic rules</span></div></li>
-      <li class="pl-step"><span class="pl-num">3</span><div><strong>Cite</strong><span><b id="pl-fda">54/73</b> + <b id="pl-dosing">12</b> dose rules in FDA labels</span></div></li>
-      <li class="pl-step"><span class="pl-num">4</span><div><strong>Resolve</strong><span>Solver spaces clashing doses</span></div></li>
-      <li class="pl-step"><span class="pl-num">5</span><div><strong>Hand off</strong><span>SBAR for the pharmacist</span></div></li>
-      <li class="pl-guard"><span aria-hidden="true">⛔</span><div><strong>Fail-closed</strong><span>Unknown → “not checked”, never “safe”</span></div></li>
+      <li class="pl-step"><span class="pl-num">1</span><div><strong>Snap the label</strong><span>Photo → medicines &amp; doses</span></div></li>
+      <li class="pl-step"><span class="pl-num">2</span><div><strong>Check</strong><span><b id="pl-rules">77</b> known dangerous pairs</span></div></li>
+      <li class="pl-step"><span class="pl-num">3</span><div><strong>Show proof</strong><span><b id="pl-fda">54/73</b> pairs + <b id="pl-dosing">12</b> dose limits in FDA label text</span></div></li>
+      <li class="pl-step"><span class="pl-num">4</span><div><strong>Plan the day</strong><span>Keeps clashing doses apart</span></div></li>
+      <li class="pl-step"><span class="pl-num">5</span><div><strong>Share</strong><span>Ready-made note for the pharmacist</span></div></li>
+      <li class="pl-guard"><span aria-hidden="true">⛔</span><div><strong>Never guesses</strong><span>Unknown medicine → “not checked”, never “safe”</span></div></li>
     </ol>
   </header>
 
@@ -59,7 +59,7 @@
         <section class="panel patient-panel" aria-label="Patient context">
           <div class="panel-header">
             <h2 class="panel-title">Patient</h2>
-            <span class="panel-kicker">Drives kidney &amp; age dosing checks</span>
+            <span class="panel-kicker">Used to check doses for age &amp; kidneys</span>
           </div>
           <div class="patient-bar">
             <div class="patient-field patient-name-field">
@@ -71,26 +71,26 @@
               <input id="patient-age" type="number" value="74" min="1" max="120">
             </div>
             <div class="patient-field patient-kidney">
-              <label for="patient-egfr">eGFR <span class="unit">mL/min/1.73m²</span></label>
-              <input id="patient-egfr" type="number" min="0" max="200" step="1" placeholder="not entered" inputmode="numeric">
+              <label for="patient-egfr">Kidney function <span class="unit">eGFR</span></label>
+              <input id="patient-egfr" type="number" min="0" max="200" step="1" placeholder="from blood test" inputmode="numeric">
             </div>
             <div class="patient-field patient-kidney">
-              <label for="patient-crcl">CrCl <span class="unit">Cockcroft-Gault</span></label>
-              <input id="patient-crcl" type="number" min="0" max="200" step="1" placeholder="not entered" inputmode="numeric">
+              <label for="patient-crcl">Kidney clearance <span class="unit">CrCl</span></label>
+              <input id="patient-crcl" type="number" min="0" max="200" step="1" placeholder="from blood test" inputmode="numeric">
             </div>
           </div>
-          <p class="patient-hint">Each label names its own measure (metformin: eGFR; lithium: CrCl). Blank = not checked. Nothing is stored.</p>
+          <p class="patient-hint">Both come from a routine blood test. Each medicine’s label uses one or the other, so we never swap them. Leave blank if unknown and we’ll say the dose wasn’t checked. Nothing is saved.</p>
         </section>
 
         <section class="preset-section" aria-label="Demo cases">
-          <span class="preset-label">Demo cases</span>
+          <span class="preset-label">Try an example</span>
           <div class="preset-buttons">
-            <button class="btn-preset active" data-preset="cardiac" type="button"><span class="preset-icon">🚨</span><strong>Cardiac polypharmacy</strong></button>
+            <button class="btn-preset active" data-preset="cardiac" type="button"><span class="preset-icon">🚨</span><strong>Heart patient, 6 medicines</strong></button>
             <button class="btn-preset" data-preset="kidney" type="button"><span class="preset-icon">🩺</span><strong>Kidney patient</strong></button>
-            <button class="btn-preset" data-preset="psych" type="button"><span class="preset-icon">⚠️</span><strong>Serotonin risk</strong></button>
-            <button class="btn-preset" data-preset="endocrine" type="button"><span class="preset-icon">💊</span><strong>Thyroid + minerals</strong></button>
-            <button class="btn-preset" data-preset="unknown" type="button"><span class="preset-icon">❓</span><strong>Unknown drug</strong></button>
-            <button class="btn-preset" data-preset="safe" type="button"><span class="preset-icon">✅</span><strong>No interactions</strong></button>
+            <button class="btn-preset" data-preset="psych" type="button"><span class="preset-icon">⚠️</span><strong>Antidepressant + painkiller</strong></button>
+            <button class="btn-preset" data-preset="endocrine" type="button"><span class="preset-icon">💊</span><strong>Thyroid + supplements</strong></button>
+            <button class="btn-preset" data-preset="unknown" type="button"><span class="preset-icon">❓</span><strong>Unknown medicine</strong></button>
+            <button class="btn-preset" data-preset="safe" type="button"><span class="preset-icon">✅</span><strong>No clashes</strong></button>
           </div>
         </section>
 
@@ -109,19 +109,19 @@
               <div class="select-wrapper">
                 <label class="sr-only" for="drug-dropdown">Choose a medication</label>
                 <select id="drug-dropdown" class="select-input">
-                  <option value="" disabled selected>-- Select a medication to add --</option>
+                  <option value="" disabled selected>Choose a medicine to add</option>
                 </select>
               </div>
-              <button id="btn-add-drug" class="btn btn-primary" type="button">Add drug</button>
+              <button id="btn-add-drug" class="btn btn-primary" type="button">Add</button>
             </div>
             <div class="scan-row">
               <button id="btn-scan-label" class="btn btn-scan" type="button">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                Scan prescription label
+                Scan a label
               </button>
-              <span class="scan-hint">Photo or image · OCR runs in your browser</span>
+              <span class="scan-hint">The photo stays on your device</span>
             </div>
-            <p class="field-hint">Supports generics and US brand names (Coumadin, Cipro, Advil, Tums, Synthroid, Bactrim, and more). Unknown medicines are flagged, never assumed safe.</p>
+            <p class="field-hint">Generic or brand names both work (Coumadin, Cipro, Advil, Tums, Synthroid…). If we don’t know a medicine, we say so.</p>
           </div>
 
           <!-- Regimen Cards List -->
@@ -133,9 +133,9 @@
           <div id="unverified-panel" class="unverified-panel hidden" aria-live="polite">
             <div class="unverified-title">
               <span class="unverified-icon">❓</span>
-              <strong>Unverified medicines</strong>
+              <strong>Medicines we couldn’t check</strong>
             </div>
-            <p>These are not in the demo knowledge base. The audit will not call the regimen safe.</p>
+            <p>These aren’t in our medicine list, so we won’t call this list safe. Ask a pharmacist about them.</p>
             <div id="unverified-list" class="unverified-list"></div>
           </div>
 
@@ -143,18 +143,18 @@
           <div class="audit-action-box">
             <button id="btn-run-audit" class="btn btn-audit" type="button">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Run clinical safety audit
+              Check these medicines
             </button>
           </div>
         </div>
 
         <div class="panel method-panel">
-          <h3>What the engine checks</h3>
+          <h3>What we check</h3>
           <ul class="method-list">
-            <li><strong>Interactions:</strong> CYP450, renal clearance, pharmacodynamic synergy, QT, bleeding, hyperkalemia.</li>
-            <li><strong>Absorption:</strong> calcium/iron chelation and thyroid-hormone spacing.</li>
-            <li><strong>Timing:</strong> fasting, meals, bedtime, twice-daily intervals, weekly and as-needed medicines.</li>
-            <li><strong>Fail-safe:</strong> anything outside the 52-drug demo knowledge base is marked unverified.</li>
+            <li><strong>Dangerous pairs:</strong> one medicine raising another’s level, bleeding, heart rhythm, high potassium, serotonin overload.</li>
+            <li><strong>Blocking:</strong> calcium, iron and antacids that stop other medicines being absorbed.</li>
+            <li><strong>Timing:</strong> empty stomach, with food, bedtime, twice a day, weekly and as-needed.</li>
+            <li><strong>Honesty:</strong> anything outside our 52-medicine list is flagged as not checked.</li>
           </ul>
         </div>
       </div>
@@ -168,24 +168,24 @@
           <div class="score-visual">
             <div class="score-circle">
               <span id="score-value" class="score-num">100</span>
-              <span class="score-max">safety index</span>
+              <span class="score-max">safety score</span>
             </div>
           </div>
           <div class="score-details">
             <div class="score-status-badge">
-              <span id="score-status-text">NO MEDICATIONS TO REVIEW</span>
+              <span id="score-status-text">Add medicines to check</span>
             </div>
             <div id="score-summary-metrics" class="score-metrics">
-              <span class="metric-tag green">0 Conflicts</span>
+              <span class="metric-tag green">No problems yet</span>
             </div>
-            <p id="score-recommendation-sub" class="score-subtext">Add medications to run a safety audit.</p>
+            <p id="score-recommendation-sub" class="score-subtext">Add medicines or pick an example to start.</p>
           </div>
         </div>
 
         <div id="graph-container" class="graph-container hidden">
             <div class="graph-header">
-              <h3>Interaction map</h3>
-              <span class="graph-legend"><span class="dot red"></span> Critical <span class="dot amber"></span> Monitor / timing</span>
+              <h3>Which medicines clash</h3>
+              <span class="graph-legend"><span class="dot red"></span> Dangerous <span class="dot amber"></span> Needs care or spacing</span>
             </div>
             <div id="interaction-graph" class="interaction-graph"></div>
           </div>
@@ -195,15 +195,15 @@
         <div class="tab-bar" role="tablist" aria-label="Audit views">
           <button class="tab-btn active" data-tab="violations" type="button" role="tab" aria-selected="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Alerts (<span id="violations-count">0</span>)
+            Problems found (<span id="violations-count">0</span>)
           </button>
           <button class="tab-btn" data-tab="timeline" type="button" role="tab" aria-selected="false">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            24-hour schedule
+            Daily plan
           </button>
           <button class="tab-btn" data-tab="patient" type="button" role="tab" aria-selected="false">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Patient advice
+            For the patient
           </button>
         </div>
 
@@ -218,11 +218,11 @@
         <div id="tab-timeline" class="tab-pane" role="tabpanel">
           <div class="timeline-intro-box">
             <div class="timeline-info">
-              <h3>Constraint-based schedule de-confliction</h3>
-              <p>The solver enforces fasting windows, meals, twice-daily intervals, bedtime placement, and 3–4 hour chelation spacing. Weekly and as-needed medicines are kept out of the daily timeline.</p>
+              <h3>A daily plan that keeps clashing doses apart</h3>
+              <p>Each dose is placed around meals, empty-stomach and bedtime rules, and medicines that block each other are kept 3–4 hours apart. Weekly and as-needed medicines are listed separately.</p>
             </div>
             <div class="timeline-actions">
-              <button id="btn-re-optimize" class="btn btn-secondary btn-sm" type="button">Re-optimize</button>
+              <button id="btn-re-optimize" class="btn btn-secondary btn-sm" type="button">Re-plan</button>
               <button id="btn-calendar" class="btn btn-primary btn-sm" type="button">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 Add to calendar
@@ -241,10 +241,10 @@
         <div id="tab-patient" class="tab-pane" role="tabpanel">
           <div class="patient-advice-box">
             <div class="advice-header">
-              <h3>Plain-language medication guide</h3>
-              <span class="reading-badge">Designed for caregivers</span>
+              <h3>What to do, in plain words</h3>
+              <span class="reading-badge">For patients &amp; carers</span>
             </div>
-            <p class="advice-desc">Clear next steps for patients and family caregivers. This guidance is generated from the same deterministic audit and is not medical advice.</p>
+            <p class="advice-desc">Clear next steps for patients and family carers, from the same checks. This is not medical advice.</p>
             <div id="patient-advice-list" class="patient-advice-list">
               <!-- Dynamic advice items -->
             </div>
@@ -268,12 +268,12 @@
       <div class="modal-header">
         <div class="modal-title-group">
           <h3 id="scan-modal-title">Scan a prescription label</h3>
-          <span class="sbar-pill">Browser OCR · no upload</span>
+          <span class="sbar-pill">Read on your device · nothing uploaded</span>
         </div>
         <button id="btn-close-scan" class="modal-close" type="button" aria-label="Close scan dialog">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="modal-desc">Choose a clear photo of the label. The image is read locally in your browser; only the recognized text is used to suggest medicines. The demo uses the registry's standard dose frequency for scheduling, so confirm the label's directions with a pharmacist.</p>
+        <p class="modal-desc">Choose a clear photo of the label. It’s read on your device and never uploaded. We suggest the medicines we find and you confirm before anything is added. The plan uses each medicine’s usual timing, so always follow the label’s own directions.</p>
 
         <label id="scan-dropzone" class="scan-dropzone" for="scan-file" tabindex="0" role="button">
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -284,7 +284,7 @@
 
         <div class="scan-sample-row">
           <button id="btn-sample-label" class="btn btn-secondary btn-sm" type="button">Try a sample label</button>
-          <span class="scan-hint">Useful for a quick demo.</span>
+          <span class="scan-hint">No photo handy? Use ours.</span>
         </div>
 
         <div id="scan-preview-wrap" class="scan-preview-wrap hidden">
@@ -298,7 +298,7 @@
 
         <div id="scan-results" class="scan-results hidden">
           <div class="scan-results-header">
-            <strong>Recognized text</strong>
+            <strong>Text we read</strong>
             <button id="btn-clear-scan" class="btn-text" type="button">Clear</button>
           </div>
           <pre id="scan-text" class="scan-text"></pre>
@@ -306,13 +306,13 @@
         </div>
 
         <details class="scan-paste">
-          <summary>OCR unavailable? Paste label text instead</summary>
+          <summary>Can’t scan? Paste the label text instead</summary>
           <textarea id="scan-paste-text" class="sbar-textarea" rows="4" aria-label="Paste prescription label text" placeholder="Example: Warfarin 5 mg — take one tablet by mouth every evening"></textarea>
-          <button id="btn-parse-paste" class="btn btn-secondary btn-sm" type="button">Find medicines in text</button>
+          <button id="btn-parse-paste" class="btn btn-secondary btn-sm" type="button">Find medicines</button>
         </details>
       </div>
       <div class="modal-footer">
-        <button id="btn-add-scanned" class="btn btn-primary" type="button" disabled>Add selected medicines</button>
+        <button id="btn-add-scanned" class="btn btn-primary" type="button" disabled>Add ticked medicines</button>
         <button id="btn-done-scan" class="btn btn-secondary" type="button">Done</button>
       </div>
     </div>
@@ -323,13 +323,13 @@
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title-group">
-          <h3 id="sbar-modal-title">Clinical pharmacy review draft</h3>
-          <span class="sbar-pill">SBAR format · pharmacist verification required</span>
+          <h3 id="sbar-modal-title">Note for the pharmacist</h3>
+          <span class="sbar-pill">SBAR handover format · a pharmacist must check it</span>
         </div>
         <button id="btn-close-modal" class="modal-close" type="button" aria-label="Close SBAR dialog">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="modal-desc">This draft summarizes verified interactions, unverified medicines, and timing issues for pharmacist or physician review.</p>
+        <p class="modal-desc">A summary of the problems found, medicines we couldn’t check and timing issues, laid out the way pharmacists and doctors hand over a patient. Copy it into a message or print it.</p>
         <textarea id="sbar-textarea" class="sbar-textarea" readonly aria-label="Generated SBAR clinical review draft"></textarea>
       </div>
       <div class="modal-footer">

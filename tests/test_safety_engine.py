@@ -88,7 +88,7 @@ class TestClinicalAudit(unittest.TestCase):
     def test_warfarin_ibuprofen_critical(self):
         result = self.engine.audit_regimen(["Warfarin", "Ibuprofen"])
         self.assertEqual(result["critical_count"], 1)
-        self.assertIn("CRITICAL", result["overall_status"])
+        self.assertEqual(result["status_color"], "red")
         self.assertTrue(any("Bleeding" in item["title"] for item in result["interactions"]))
         self.assertLess(result["safety_score"], 70)
 
@@ -155,13 +155,13 @@ class TestClinicalAudit(unittest.TestCase):
         self.assertEqual(result["critical_count"], 0)
         self.assertEqual(result["moderate_count"], 0)
         self.assertEqual(result["safety_score"], 100)
-        self.assertIn("SAFE", result["overall_status"])
+        self.assertEqual(result["status_color"], "green")
 
     def test_unknown_drug_fails_closed(self):
         result = self.engine.audit_regimen(["Metformin", "Mystery Drug"])
         self.assertIn("Mystery Drug", result["unknown_drugs"])
         self.assertEqual(result["unverified_count"], 1)
-        self.assertIn("UNVERIFIED", result["overall_status"])
+        self.assertEqual(result["status_color"], "slate")
         self.assertLess(result["safety_score"], 100)
         self.assertTrue(any("Mystery Drug" in line for line in result["patient_summary"]))
 
