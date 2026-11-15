@@ -341,7 +341,7 @@ class ClinicalSafetyEngine:
             "interactions": interactions,
             "unknown_drugs": unknown_drugs,
             "duplicates_removed": duplicates,
-            "patient_summary": self._generate_patient_summary(interactions, unknown_drugs),
+            "patient_summary": self._generate_patient_summary(interactions, unknown_drugs, patient_checks),
             "knowledge_base": self.meta,
             "disclaimer": DISCLAIMER,
         }
@@ -434,9 +434,21 @@ class ClinicalSafetyEngine:
     # Patient-facing copy
     # ------------------------------------------------------------------
     def _generate_patient_summary(
-        self, interactions: List[Dict[str, Any]], unknown_drugs: List[str]
+        self,
+        interactions: List[Dict[str, Any]],
+        unknown_drugs: List[str],
+        patient_checks: Optional[Dict[str, Any]] = None,
     ) -> List[str]:
         advice: List[str] = []
+
+        # Kidney / age dosing flags come first: they are about this patient.
+        for flag in (patient_checks or {}).get("flags", []):
+            reason = "Your age" if flag["measure"] == "age" else "Your kidney test result"
+            kind = "🚨 DANGER" if flag["severity"] == "CRITICAL" else "⚠️ CAUTION"
+            advice.append(
+                f"{kind}: {reason} means {flag['drug']} may not be safe at the usual "
+                f"dose. Ask your doctor or pharmacist before your next dose."
+            )
 
         for item in interactions:
             drug_a = item["drug_a"]
@@ -465,6 +477,12 @@ class ClinicalSafetyEngine:
                 f"❓ NOT CHECKED: “{drug}” isn’t in our medicine list, so we "
                 f"couldn’t check it. Don’t assume it’s safe. Show this list to a "
                 f"pharmacist and ask whether it clashes with your other medicines."
+            )
+
+        for gap in (patient_checks or {}).get("not_checked", []):
+            advice.append(
+                f"❓ NOT CHECKED: We had no {gap['measure_label']} result, so we "
+                f"couldn’t check whether {gap['drug']}’s dose suits your kidneys."
             )
 
         if not advice:

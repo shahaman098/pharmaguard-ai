@@ -107,6 +107,12 @@ class TestPatientChecks(unittest.TestCase):
         self.assertEqual(unsafe["critical_count"], 1)
         self.assertLess(unsafe["safety_score"], safe["safety_score"])
         self.assertEqual(unsafe["status_color"], "red")
+        # The patient-facing advice must agree with the verdict, never say "no clashes".
+        text = " ".join(unsafe["patient_summary"])
+        self.assertIn("DANGER", text)
+        self.assertNotIn("no known clashes", text)
+        gap = self.engine.audit_regimen(["metformin"], patient=patient(age=70))
+        self.assertTrue(any("NOT CHECKED" in a and "Metformin" in a for a in gap["patient_summary"]))
 
     def test_flag_carries_label_quote(self):
         result, _ = self.flags(["metformin"], egfr=20)
