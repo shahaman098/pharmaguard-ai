@@ -3,7 +3,7 @@
 **Event:** DSH Hacks V2 (AI × Healthcare) · Devpost submission
 **Project:** PharmaGuard AI
 **Repo:** https://github.com/shahaman098/pharmaguard-ai
-**Live demo:** https://pharmaguard-ai-5jhp.onrender.com
+**Live demo:** https://pharmaguard-ai.amanks.workers.dev
 **Run locally:** `python3 server.py --port 8080` (no install step; see README)
 **Video:** see the demo video link on the Devpost page
 
