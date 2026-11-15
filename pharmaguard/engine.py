@@ -108,6 +108,28 @@ def _alias_variants(value: str) -> List[str]:
     return variants
 
 
+# Plain-language reason per interaction category, for patient-facing text only.
+# The clinical title and action stay in the Problems view and the SBAR note.
+_PLAIN_WHY = {
+    "pharmacokinetic_cyp": "One can make the other build up in the body to harmful levels.",
+    "pharmacokinetic": "One can change how much of the other stays in the body.",
+    "pharmacodynamic": "Together their effects can add up and cause harm.",
+    "pharmacokinetic_renal": "Together they can let one build up because the kidneys clear it more slowly.",
+    "pharmacodynamic_renal": "Together they can put extra strain on the kidneys.",
+    "pharmacodynamic_lab": "Together they can push a blood test result out of the safe range.",
+    "pharmacodynamic_cardiac": "Together they can upset the heart’s rhythm.",
+    "pharmacodynamic_neuro": "Together they can over-affect the brain and nerves.",
+    "pharmacodynamic_endocrine": "Together they can upset hormone levels.",
+    "chelation_absorption": "One can stop the other being absorbed.",
+    "absorption": "One can stop the other being absorbed.",
+    "therapeutic_duplication": "They do the same job, so taking both is like a double dose.",
+}
+
+
+def _plain_why(item: Dict[str, Any]) -> str:
+    return _PLAIN_WHY.get(item.get("category", ""), "Together they can cause harm.")
+
+
 class ClinicalSafetyEngine:
     """Evaluates a multi-drug regimen against curated interaction rules,
     computes a transparent risk index, and generates clinician/patient artifacts.
@@ -423,8 +445,7 @@ class ClinicalSafetyEngine:
             if item["severity"] == "CRITICAL":
                 advice.append(
                     f"🚨 DANGER: Don’t take {drug_a} and {drug_b} together until you’ve "
-                    f"spoken to your doctor or pharmacist. {item['title']}. "
-                    f"{item['clinical_action']}"
+                    f"spoken to your doctor or pharmacist. {_plain_why(item)}"
                 )
             elif item["spacing_resolvable"]:
                 hours = item["recommended_spacing_hours"]
@@ -436,7 +457,7 @@ class ClinicalSafetyEngine:
             else:
                 advice.append(
                     f"⚠️ CAUTION: {drug_a} and {drug_b} need extra care. "
-                    f"{item['title']}. Ask your pharmacist what to watch for."
+                    f"{_plain_why(item)} Ask your pharmacist what to watch for."
                 )
 
         for drug in unknown_drugs:

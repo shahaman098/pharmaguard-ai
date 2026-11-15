@@ -434,7 +434,7 @@ class ScheduleOptimizer:
         if plan["doses_per_day"] > 1:
             instruction = f"Dose {index + 1} of {plan['doses_per_day']}. {instruction}"
         if critical:
-            instruction += " CRITICAL: do not co-administer with " + ", ".join(critical) + " without clinician review."
+            instruction += " Dangerous with " + ", ".join(critical) + ": check with your pharmacist before taking them together."
 
         if plan["meal_relation"] == "fasting":
             status = "fasting"
@@ -557,9 +557,8 @@ class ScheduleOptimizer:
                 if constraint.get("kind") == "critical":
                     messages.append(
                         f"Kept {by_key[constraint['a']]['name']} and "
-                        f"{by_key[constraint['b']]['name']} {actual:g}h apart for "
-                        f"administration safety; the contraindication still requires "
-                        f"clinician review."
+                        f"{by_key[constraint['b']]['name']} {actual:g}h apart; spacing doesn’t make "
+                        f"this pair safe, so a pharmacist or doctor still needs to review it."
                     )
                 else:
                     messages.append(
