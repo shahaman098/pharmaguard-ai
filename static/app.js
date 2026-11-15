@@ -685,7 +685,7 @@ function renderInteractionGraph(result) {
     return `
       <g>
         <rect x="${pos.x - w / 2}" y="${pos.y - 16}" width="${w}" height="32" rx="4" fill="#ffffff" stroke="${stroke}" stroke-width="${severity ? 2 : 1}"></rect>
-        <text x="${pos.x}" y="${pos.y + 5}" text-anchor="middle" font-size="15" font-weight="600" fill="#16181d" font-family="IBM Plex Sans, sans-serif">${escapeHtml(label)}</text>
+        <text x="${pos.x}" y="${pos.y + 5}" text-anchor="middle" font-size="15" font-weight="600" fill="#0f1b2a" font-family="Public Sans, sans-serif">${escapeHtml(label)}</text>
         <title>${escapeHtml(drug.name)}</title>
       </g>
     `;
@@ -753,7 +753,7 @@ function renderDayRibbon(schedule) {
     const y = top + i * laneH + laneH / 2;
     const dots = doses.filter((d) => d.drug === drug).map((d) => {
       const moved = d.status === "rescheduled";
-      const fill = moved ? "#6941c6" : "#24496b";
+      const fill = moved ? "#6941c6" : "#0f2a44";
       const ring = d.critical_conflict ? `stroke="#b42318" stroke-width="3"` : "";
       return `<g><title>${escapeHtml(drug)} ${escapeHtml(d.time)}${moved ? " (moved by solver)" : ""}${d.critical_conflict ? " (critical conflict: needs review)" : ""}</title>
         <rect x="${x(d.minutes) - 27}" y="${y - 12}" width="54" height="24" rx="4" fill="${fill}" ${ring}/>
@@ -783,7 +783,7 @@ function renderDayRibbon(schedule) {
 
   host.innerHTML = `
     <div class="ribbon-head"><strong>Your day at a glance</strong>
-      <span class="ribbon-key"><i style="background:#24496b"></i>usual time <i style="background:#6941c6"></i>moved for safety <i class="ring"></i>dangerous pair — ask a pharmacist</span></div>
+      <span class="ribbon-key"><i style="background:#0f2a44"></i>usual time <i style="background:#6941c6"></i>moved for safety <i class="ring"></i>dangerous pair — ask a pharmacist</span></div>
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Daily dose times per medicine">${ticks.join("")}${lanes}</svg>
     ${chips ? `<div class="rule-chips"><span class="rule-chips-title">Spacing checked:</span>${chips}</div>` : ""}`;
 }

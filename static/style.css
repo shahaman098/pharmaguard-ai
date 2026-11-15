@@ -1,25 +1,27 @@
 /* PharmaGuard — interface stylesheet
  *
- * A restrained clinical-document look: paper background, ink type, hairline
- * rules. Colour is reserved for meaning (danger, caution, moved, verified).
- * Type: IBM Plex Sans for UI, IBM Plex Serif for quoted label text, IBM Plex
+ * Clinical-system look: navy header bar, white panels on a cool grey field,
+ * clinical-blue actions. Colour is reserved for meaning (danger, caution,
+ * moved, verified). Type: Public Sans for UI and quoted label text, IBM Plex
  * Mono for times, doses and numbers.
  */
 
 :root {
-  --paper: #f6f5f1;
+  --paper: #edf1f5;
   --surface: #ffffff;
-  --sunken: #faf9f6;
-  --ink: #16181d;
-  --ink-2: #3a3f47;
-  --muted: #6b6f76;
-  --faint: #9a9a94;
-  --line: #e4e2dc;
-  --line-strong: #cfccc4;
+  --sunken: #f5f7fa;
+  --ink: #0f1b2a;
+  --ink-2: #33475b;
+  --muted: #5a6b7d;
+  --faint: #8e9bab;
+  --line: #dce3eb;
+  --line-strong: #c2ccd8;
 
-  --accent: #1f5f4a;
-  --accent-ink: #164534;
-  --accent-weak: #e8f1ec;
+  --accent: #0b5cad;
+  --navy: #0f2a44;
+  --navy-2: #173a5c;
+  --accent-ink: #084887;
+  --accent-weak: #e8f1fb;
 
   --danger: #b42318;
   --danger-weak: #fbefed;
@@ -34,14 +36,14 @@
   --moved-weak: #f3f0fb;
   --moved-line: #d3c7f2;
   --slate: #4b5563;
-  --slate-weak: #f0f0ee;
+  --slate-weak: #eef1f4;
 
-  --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif: var(--sans);
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  --r: 6px;
-  --r-lg: 8px;
+  --r: 4px;
+  --r-lg: 6px;
 
   /* aliases used by older inline styles */
   --primary: var(--accent);
@@ -72,7 +74,7 @@ mark { background: #fbe7a1; color: inherit; padding: 0 2px; border-radius: 2px; 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ------------------------------------------------------------------ header */
-.navbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.navbar { background: var(--navy); color: #fff; }
 .nav-container {
   max-width: 1400px; margin: 0 auto; padding: 14px 28px;
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
@@ -80,34 +82,35 @@ mark { background: #fbe7a1; color: inherit; padding: 0 2px; border-radius: 2px; 
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .brand-icon {
   width: 34px; height: 34px; border-radius: var(--r); flex: 0 0 auto;
-  display: grid; place-items: center; background: var(--accent); color: #fff;
+  display: grid; place-items: center; background: #2f7fd6; color: #fff;
 }
 .brand-icon svg { width: 20px; height: 20px; }
 .brand-text { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; min-width: 0; }
-.brand-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.015em; }
-.brand-sub { color: var(--muted); font-size: 0.9rem; }
+.brand-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.015em; color: #fff; }
+.brand-sub { color: #a8bcd1; font-size: 0.9rem; }
 .nav-actions { display: flex; align-items: center; gap: 16px; }
 .status-indicator {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 0.82rem; color: var(--muted); white-space: nowrap;
+  font-size: 0.82rem; color: #a8bcd1; white-space: nowrap;
 }
-.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #3fd18f; }
 
 .pipeline-strip {
-  list-style: none; max-width: 1400px; margin: 0 auto; padding: 0 28px 14px;
+  list-style: none; max-width: 1400px; margin: 0 auto; padding: 10px 28px 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.09);
   display: flex; flex-wrap: wrap; gap: 6px 26px; counter-reset: step;
 }
-.pl-step, .pl-guard { display: flex; align-items: baseline; gap: 8px; font-size: 0.84rem; color: var(--muted); }
+.pl-step, .pl-guard { display: flex; align-items: baseline; gap: 8px; font-size: 0.84rem; color: #9fb3c8; }
 .pl-step div, .pl-guard div { display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline; }
 .pl-num {
-  font-family: var(--mono); font-size: 0.75rem; color: var(--faint);
+  font-family: var(--mono); font-size: 0.75rem; color: #6f8aa6;
 }
 .pl-num::after { content: "."; }
-.pl-step strong, .pl-guard strong { color: var(--ink); font-weight: 600; }
-.pl-step span:not(.pl-num), .pl-guard span { color: var(--muted); }
-.pl-step b { font-family: var(--mono); font-weight: 500; color: var(--accent-ink); }
-.pl-guard { margin-left: auto; padding-left: 12px; border-left: 2px solid var(--danger); }
-.pl-guard strong { color: var(--danger); }
+.pl-step strong, .pl-guard strong { color: #fff; font-weight: 600; }
+.pl-step span:not(.pl-num), .pl-guard span { color: #9fb3c8; }
+.pl-step b { font-family: var(--mono); font-weight: 500; color: #8cc4ff; }
+.pl-guard { margin-left: auto; padding-left: 12px; border-left: 2px solid #ff6b5e; }
+.pl-guard strong { color: #ff9a90; }
 
 /* ------------------------------------------------------------------ buttons */
 .btn {
@@ -122,8 +125,8 @@ mark { background: #fbe7a1; color: inherit; padding: 0 2px; border-radius: 2px; 
 .btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
 .btn-secondary:hover:not(:disabled) { border-color: var(--ink-2); }
 .btn-sm { height: 30px; padding: 0 10px; font-size: 0.82rem; }
-.btn-sbar { background: var(--ink); color: #fff; }
-.btn-sbar:hover { background: #000; }
+.btn-sbar { background: #fff; color: var(--navy); }
+.btn-sbar:hover { background: #dbe8f6; }
 .btn-scan { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
 .btn-scan:hover { border-color: var(--ink-2); }
 .btn-audit { width: 100%; height: 42px; background: var(--accent); color: #fff; font-size: 0.94rem; }
@@ -222,7 +225,7 @@ mark { background: #fbe7a1; color: inherit; padding: 0 2px; border-radius: 2px; 
   border-radius: 3px; font: 600 0.66rem var(--mono); letter-spacing: 0.03em;
 }
 .unverified-pill { background: var(--slate-weak); color: var(--slate); border: 1px solid var(--line-strong); }
-.dose-source { background: var(--accent-weak); color: var(--accent-ink); }
+.dose-source { background: var(--ok-weak); color: var(--ok); }
 
 .unverified-panel {
   border-left: 2px solid var(--slate); padding: 8px 12px; margin-bottom: 14px; background: var(--sunken);
@@ -295,7 +298,7 @@ mark { background: #fbe7a1; color: inherit; padding: 0 2px; border-radius: 2px; 
 }
 .tab-btn svg { opacity: 0.7; }
 .tab-btn:hover { color: var(--ink); }
-.tab-btn.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+.tab-btn.active { color: var(--accent); font-weight: 600; border-bottom-color: var(--accent); }
 #violations-count { font-family: var(--mono); }
 .tab-pane { display: none; }
 .tab-pane.active { display: block; }
@@ -356,8 +359,9 @@ mark { background: #fbe7a1; color: inherit; padding: 0 2px; border-radius: 2px; 
 .label-evidence.ev-none { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .label-evidence.ev-none .ev-badge { color: var(--muted); font-weight: 500; }
 .label-evidence blockquote {
-  margin: 10px 0 8px; padding: 2px 0 2px 16px; border-left: 2px solid var(--ok);
-  font-family: var(--serif); font-size: 1rem; line-height: 1.6; color: var(--ink);
+  margin: 10px 0 8px; padding: 10px 14px; border-left: 3px solid var(--ok);
+  background: var(--sunken); border-radius: 0 var(--r) var(--r) 0;
+  font-size: 0.94rem; line-height: 1.6; color: var(--ink);
 }
 .label-evidence.ev-class blockquote { border-left-color: var(--warn); }
 .label-evidence a { font-size: 0.82rem; font-weight: 500; text-underline-offset: 3px; }
@@ -408,8 +412,8 @@ mark { background: #fbe7a1; color: inherit; padding: 0 2px; border-radius: 2px; 
   font-size: 0.72rem; font-weight: 600; padding: 0 6px; border-radius: 3px; border: 1px solid var(--line);
   color: var(--muted); background: var(--sunken);
 }
-.dose-status.fasting { color: #24496b; border-color: #c9d6e3; background: #f1f5f9; }
-.dose-status.with_meal { color: var(--accent-ink); border-color: var(--ok-line); background: var(--accent-weak); }
+.dose-status.fasting { color: #0e6b74; border-color: #b9dfe2; background: #e8f5f6; }
+.dose-status.with_meal { color: var(--ok); border-color: var(--ok-line); background: var(--ok-weak); }
 .dose-status.rescheduled { color: var(--moved); border-color: var(--moved-line); background: var(--moved-weak); }
 .dose-critical { color: var(--danger); border-color: var(--danger-line); background: var(--danger-weak); }
 .slot-instruction { font-size: 0.84rem; color: var(--muted); line-height: 1.45; margin-top: 2px; }
